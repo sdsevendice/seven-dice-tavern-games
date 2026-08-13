@@ -1,0 +1,102 @@
+#seven-dice-poker {
+  --dp-gold: #d5a84d;
+  --dp-gold-light: #f3d58e;
+  --dp-red: #8d292a;
+  --dp-cream: #eee2c6;
+  color: var(--dp-cream);
+  background: #120f0e;
+  border: 1px solid #6d5634;
+  box-shadow: 0 24px 80px #000d;
+}
+
+#seven-dice-poker .window-header { background: #171210; border-bottom: 1px solid #614b2f; }
+#seven-dice-poker .window-content { padding: 0; overflow: hidden; background: radial-gradient(circle at 50% 20%, #5b301f55, transparent 40%), linear-gradient(145deg, #231713, #100d0c 70%); }
+.dice-parlor .dp-shell { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.dice-parlor button { font-family: inherit; }
+.dice-parlor .dp-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: linear-gradient(90deg, #201512ee, #110e0d); border-bottom: 1px solid #61482d; }
+.dice-parlor .dp-kicker { color: var(--dp-gold); font-size: 10px; font-weight: 900; letter-spacing: .3em; }
+.dice-parlor h1, .dice-parlor h2 { margin: 2px 0; color: #fff5dc; font-family: Georgia, serif; }
+.dice-parlor h1 { font-size: 28px; }
+.dice-parlor h2 { font-size: 19px; }
+.dice-parlor .dp-rules-button, .dice-parlor .dp-danger, .dice-parlor .dp-primary { width: auto; min-height: 36px; padding: 0 14px; border-radius: 6px; }
+.dice-parlor .dp-rules-button { color: #e8dac0; background: #2a211d; border: 1px solid #66523c; }
+.dice-parlor .dp-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 16px 24px; color: #d8ccb7; background: #191310f5; border-bottom: 1px solid #6c5232; font-size: 12px; }
+.dice-parlor .dp-rules p { margin: 6px 0; line-height: 1.45; }
+.dice-parlor .dp-ranking-direction { color: var(--dp-gold-light); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.dice-parlor .dp-hand-examples { max-height: 238px; display: grid; grid-template-columns: 1fr; gap: 4px; margin: 8px 0; overflow-y: auto; padding-right: 4px; scrollbar-color: #7b5c35 #17110f; }
+.dice-parlor .dp-hand-examples > div { display: grid; grid-template-columns: minmax(110px, 1fr) auto; align-items: center; padding: 5px 7px; background: #ffffff08; border: 1px solid #493827; border-radius: 5px; }
+.dice-parlor .dp-hand-examples strong { color: #f1e4ca; font-size: 10px; }
+.dice-parlor .dp-hand-examples .dp-faces { color: var(--dp-gold-light); font-family: "Segoe UI Symbol", serif; font-size: 17px; letter-spacing: 1px; }
+.dice-parlor .dp-hand-examples small { grid-column: 1 / -1; color: #9f907a; font-size: 9px; }
+.dice-parlor .dp-setup { display: grid; flex: 1; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding: 24px; overflow: auto; }
+.dice-parlor .dp-setup section { position: relative; padding: 22px 18px; background: #1f1815dd; border: 1px solid #57432e; border-radius: 9px; }
+.dice-parlor .dp-step { position: absolute; top: 14px; right: 14px; display: grid; width: 28px; height: 28px; place-items: center; color: #1b1209; background: var(--dp-gold); border-radius: 50%; font-weight: 900; }
+.dice-parlor .dp-user-list { display: flex; flex-direction: column; gap: 7px; margin-top: 16px; }
+.dice-parlor .dp-user-list label { padding: 8px; background: #ffffff08; border-radius: 5px; }
+.dice-parlor textarea, .dice-parlor input[type="text"] { width: 100%; margin: 14px 0 8px; color: #f4ead6; background: #0e0b0a; border: 1px solid #5c4934; }
+.dice-parlor textarea { resize: vertical; }
+.dice-parlor .dp-hint { color: #a99a85; font-size: 11px; }
+.dice-parlor .dp-field-label { display: block; margin-top: 12px; color: #cbb996; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.dice-parlor .dp-primary { color: #1b1208; background: linear-gradient(#e1bb65, #bd8733); border: 1px solid #f1d490; font-weight: 800; }
+.dice-parlor .dp-primary:hover { background: linear-gradient(#f2d58c, #d39b42); }
+.dice-parlor .dp-danger { color: #e9c8c3; background: #5b2323; border: 1px solid #914342; }
+.dice-parlor .dp-waiting { display: grid; flex: 1; place-content: center; text-align: center; color: #bbaa90; }
+.dice-parlor .dp-waiting > i { color: var(--dp-gold); font-size: 40px; }
+.dice-parlor .dp-game { min-height: 0; display: flex; flex: 1; flex-direction: column; overflow: auto; }
+.dice-parlor .dp-table-info { display: flex; align-items: center; gap: 28px; padding: 10px 20px; background: #0e0c0bd9; border-bottom: 1px solid #3f3327; }
+.dice-parlor .dp-table-info div { display: flex; flex-direction: column; }
+.dice-parlor .dp-table-info span { color: #9d8b72; font-size: 9px; letter-spacing: .17em; }
+.dice-parlor .dp-table-info strong { color: #f4e8cd; }
+.dice-parlor .dp-table-info .dp-pool strong { color: var(--dp-gold-light); font-size: 16px; }
+.dice-parlor .dp-table-info .dp-danger { margin-left: auto; }
+.dice-parlor .dp-participants { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 7px; padding: 12px 16px; }
+.dice-parlor .dp-participant { display: flex; align-items: center; gap: 9px; min-height: 52px; padding: 7px 9px; background: #191412cc; border: 1px solid #46382b; border-radius: 7px; }
+.dice-parlor .dp-participant.active { border-color: var(--dp-gold); box-shadow: 0 0 14px #d5a84d26; }
+.dice-parlor .dp-participant.winner { background: #3d3015; border-color: #f0c65f; }
+.dice-parlor .dp-participant.folded { opacity: .55; }
+.dice-parlor .dp-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; color: var(--dp-gold); background: #0c0a09; border-radius: 50%; }
+.dice-parlor .dp-participant-main { min-width: 0; display: flex; flex: 1; flex-direction: column; }
+.dice-parlor .dp-participant-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dice-parlor .dp-participant-main span, .dice-parlor .dp-held { color: #9f917e; font-size: 10px; }
+.dice-parlor .dp-held { white-space: nowrap; }
+.dice-parlor .dp-reveal { display: flex; flex-direction: column; text-align: right; }
+.dice-parlor .dp-reveal span { color: var(--dp-gold-light); font-weight: 800; }
+.dice-parlor .dp-reveal strong { font-size: 10px; }
+.dice-parlor .dp-private-mini { display: flex; flex-direction: column; text-align: right; }
+.dice-parlor .dp-private-mini span { color: var(--dp-gold-light); font-size: 11px; font-weight: 800; }
+.dice-parlor .dp-private-mini strong { color: #a99a85; font-size: 8px; }
+.dice-parlor .dp-board { min-height: 310px; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 18px; background: radial-gradient(ellipse at center, #63332344, transparent 60%); }
+.dice-parlor .dp-turn-label { color: var(--dp-gold); font-size: 9px; font-weight: 900; letter-spacing: .22em; }
+.dice-parlor .dp-board > h2 { margin: 4px 0 14px; font-size: 25px; }
+.dice-parlor .dp-hidden-hand { display: flex; align-items: center; gap: 8px; color: #9e907b; }
+.dice-parlor .dp-hidden-hand p { margin: 0; }
+.dice-parlor .dp-dice-row { display: flex; justify-content: center; gap: 13px; margin: 18px 0 12px; }
+.dice-parlor .dp-die { width: 88px; height: 88px; display: grid; place-content: center; margin: 0; color: #21130d; background: linear-gradient(145deg, #fff3d5, #cdbb98); border: 3px solid #7e6745; border-radius: 14px; box-shadow: 0 8px 14px #0008, inset 0 0 0 2px #fff8; }
+.dice-parlor .dp-die:not(:disabled):hover { transform: translateY(-4px); border-color: var(--dp-gold-light); }
+.dice-parlor .dp-die.held { color: #fff4df; background: linear-gradient(145deg, #8d2f29, #4f1718); border-color: #e2aa55; box-shadow: 0 0 20px #d5a84d55; }
+.dice-parlor .dp-die span { font-family: Georgia, serif; font-size: 36px; font-weight: 900; }
+.dice-parlor .dp-die small { color: #f0cb86; font-size: 7px; font-weight: 900; letter-spacing: .08em; }
+.dice-parlor .dp-die:disabled { opacity: 1; cursor: default; }
+.dice-parlor .dp-combination { color: #bbaa91; }
+.dice-parlor .dp-combination strong { color: var(--dp-gold-light); }
+.dice-parlor .dp-actions { display: flex; gap: 9px; margin-top: 15px; }
+.dice-parlor .dp-observer { color: #92846f; }
+.dice-parlor .dp-result { display: grid; flex: 1; place-content: center; text-align: center; }
+.dice-parlor .dp-result > i { color: var(--dp-gold); font-size: 54px; filter: drop-shadow(0 0 18px #d5a84d77); }
+.dice-parlor .dp-result p { color: #a99a85; }
+.dice-parlor .dp-betting-board { min-height: 310px; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 22px; text-align: center; background: radial-gradient(ellipse at center, #80602033, transparent 62%); }
+.dice-parlor .dp-betting-icon { margin: 10px 0 2px; color: var(--dp-gold); font-size: 42px; filter: drop-shadow(0 0 16px #d5a84d66); }
+.dice-parlor .dp-betting-board > p { margin: 5px 0; color: #b7a890; }
+.dice-parlor .dp-betting-board > p strong { color: var(--dp-gold-light); }
+.dice-parlor .dp-bet-controls { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 15px; }
+.dice-parlor .dp-raise-control { display: flex; align-items: center; gap: 5px; padding: 5px; background: #0d0b0a99; border: 1px solid #4d3d2d; border-radius: 7px; }
+.dice-parlor .dp-raise-control input { width: 175px; margin: 0; }
+.dice-parlor .dp-bet-hint { max-width: 560px; font-size: 10px; }
+.dice-parlor-chat ul { margin: 6px 0; padding-left: 18px; }
+
+@media (max-width: 760px) {
+  .dice-parlor .dp-setup { grid-template-columns: 1fr; }
+  .dice-parlor .dp-rules { grid-template-columns: 1fr; }
+  .dice-parlor .dp-dice-row { gap: 6px; }
+  .dice-parlor .dp-die { width: 58px; height: 66px; }
+}

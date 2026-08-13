@@ -1,0 +1,76 @@
+<div class="sdq-shell">
+  <header class="sdq-header">
+    <img class="sdq-logo" src="modules/seven-dice-tavern-games/assets/seven-dice-logo.png" alt="Seven Dice">
+    <div><span>ИГРЫ В ТАВЕРНЕ ОТ SEVEN DICE</span><h1>{{title}}</h1><p>{{subtitle}}</p></div>
+    {{#if isDarts}}<i class="fa-solid fa-bullseye"></i>{{else}}<img class="sdq-game-art" src="modules/seven-dice-tavern-games/assets/baldur-dice.png" alt="Кости Балдура">{{/if}}
+  </header>
+
+  {{#unless hasTable}}
+    {{#if isGM}}
+    <main class="sdq-setup">
+      <section><h2>Участники</h2>
+        <div class="sdq-users">{{#each activeUsers}}<label><input type="checkbox" name="player" value="{{id}}" checked> {{name}}</label>{{/each}}</div>
+      </section>
+      <section><h2>NPC мастера</h2><textarea name="npcs" rows="5" placeholder="По одному имени на строку"></textarea></section>
+      <section><h2>Параметры</h2>
+        <label>Ставка с участника<input type="text" name="stake" value="1 зм"></label>
+        {{#if isDarts}}<label>Цель по очкам<input type="number" name="target" value="301" min="20"></label>{{/if}}
+        <button type="button" class="sdq-primary" data-action="create"><i class="fa-solid fa-play"></i> Начать игру</button>
+      </section>
+    </main>
+    {{else}}<main class="sdq-empty"><i class="fa-solid fa-hourglass"></i><h2>Мастер ещё не открыл стол</h2></main>{{/if}}
+  {{else}}
+  <main class="sdq-game">
+    <section class="sdq-info"><div><span>СТАВКА</span><strong>{{state.stake}}</strong></div><div><span>БАНК</span><strong>{{state.pool}}</strong></div>{{#if isDarts}}<div><span>ЦЕЛЬ</span><strong>{{state.target}} очков</strong></div>{{/if}}{{#if isGM}}<button type="button" class="sdq-danger" data-action="reset">Закрыть стол</button>{{/if}}</section>
+    <section class="sdq-players">
+      {{#each state.participants}}
+      <article class="{{#if active}}active{{/if}} {{#if winner}}winner{{/if}} {{#if bust}}bust{{/if}}">
+        <i class="fa-solid fa-user"></i>
+        <div><strong>{{name}}</strong><span>{{status}}</span></div>
+        {{#if ../isDarts}}<b>{{score}}</b><small>{{lastText}}</small>{{else}}<b>{{total}}</b><small>{{diceText}}</small>{{/if}}
+      </article>
+      {{/each}}
+    </section>
+    {{#if state.finished}}
+    <section class="sdq-result"><i class="fa-solid fa-trophy"></i><h2>{{state.resultText}}</h2><p>Результат опубликован в чат.</p></section>
+    {{else}}
+    <section class="sdq-board">
+      <span>ХОД УЧАСТНИКА</span><h2>{{active.name}}</h2>
+      {{#if isDarts}}
+        <div class="sdq-darts-layout">
+          <div class="sdq-target-wrap">
+            <div class="sdq-target board-{{dartboardStyle}} {{#if dartsVisual}}hit-{{dartsVisual.hit}}{{/if}}">
+              {{#each targetSectors}}<span class="sdq-sector-number" style="{{style}}">{{number}}</span>{{/each}}
+              <div class="sdq-ring sdq-ring-outer"></div><div class="sdq-ring sdq-ring-triple"></div><div class="sdq-ring sdq-ring-inner"></div><div class="sdq-bull"></div>
+              {{#if dartsVisual}}<div class="sdq-dart-marker" style="{{dartsVisual.markerStyle}}"><i></i></div>{{/if}}
+            </div>
+          </div>
+          <div class="sdq-darts-panel">
+            <div class="sdq-board-switch"><span>Вид мишени</span><div>{{#each dartboardStyles}}<button type="button" class="{{#if active}}active{{/if}}" data-action="boardStyle" data-board-style="{{id}}">{{label}}</button>{{/each}}</div></div>
+            <details class="sdq-darts-rule">
+              <summary><i class="fa-solid fa-circle-info"></i> Как начисляются очки</summary>
+              <div class="sdq-darts-rule-body">
+                <p><b>d20</b> определяет номер сектора мишени: от 1 до 20.</p>
+                <ul>
+                  <li><b>d6: 1–2 — внешняя область.</b> Номер сектора ×1. Например, сектор 5 даёт 5 очков.</li>
+                  <li><b>d6: 3–4 — внутреннее кольцо.</b> Номер сектора ×2. Например, сектор 5 даёт 10 очков.</li>
+                  <li><b>d6: 5 — тройное кольцо.</b> Номер сектора ×3. Например, сектор 5 даёт 15 очков.</li>
+                  <li><b>d6: 6 — яблочко.</b> Всегда даёт 50 очков независимо от d20.</li>
+                </ul>
+              </div>
+            </details>
+            {{#if dartsVisual}}<div class="sdq-hit-result"><small>{{dartsVisual.participantName}}</small><strong>+{{dartsVisual.points}}</strong><span>Сектор {{dartsVisual.sector}} · {{dartsVisual.label}}</span></div>{{/if}}
+            {{#if controls}}<button type="button" class="sdq-primary sdq-big" data-action="dartsRoll" data-participant-id="{{active.id}}"><i class="fa-solid fa-bullseye"></i> Бросить дротик</button>{{else}}<p class="sdq-wait">Ожидание броска…</p>{{/if}}
+          </div>
+        </div>
+      {{else}}
+        <div class="sdq-total"><small>ТЕКУЩАЯ СУММА</small><strong>{{active.total}}</strong><span>{{#if active.started}}{{active.diceText}}{{else}}Кости ещё не брошены{{/if}}</span></div>
+        {{#if canInitialRoll}}<button type="button" class="sdq-primary sdq-big" data-action="baldurRoll" data-participant-id="{{active.id}}"><i class="fa-solid fa-dice"></i> Бросить начальные 2d6</button>{{/if}}
+        {{#if canBaldurChoose}}<div class="sdq-actions"><button type="button" class="sdq-primary" data-action="baldurHit" data-participant-id="{{active.id}}"><i class="fa-solid fa-plus"></i> Добавить d6</button><button type="button" class="sdq-secondary" data-action="baldurStand" data-participant-id="{{active.id}}"><i class="fa-solid fa-hand"></i> Остановиться</button></div>{{/if}}
+        {{#unless controls}}<p class="sdq-wait">Ожидание решения…</p>{{/unless}}
+      {{/if}}
+    </section>
+    {{/if}}
+  </main>
+  {{/unless}}
+</div>

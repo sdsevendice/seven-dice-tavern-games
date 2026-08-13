@@ -1,0 +1,56 @@
+#seven-dice-tavern-games {
+  --sdth-gold: #d9ac52;
+  --sdth-cream: #f2e5c9;
+  --sdth-red: #82312c;
+  color: var(--sdth-cream);
+  background: #100d0c;
+  border: 1px solid #6b5130;
+  box-shadow: 0 26px 90px #000e;
+}
+
+#seven-dice-tavern-games .window-header { background: #17110f; border-bottom: 1px solid #654a2b; }
+#seven-dice-tavern-games .window-content { padding: 0; overflow: hidden; background: linear-gradient(#160e08c9, #0d0907e6), url("../assets/tavern-table.png") center / cover; }
+.seven-dice-tavern-hub .sdth-shell { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.seven-dice-tavern-hub button { font-family: inherit; }
+.seven-dice-tavern-hub .sdth-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 28px; background: linear-gradient(100deg, #2a1b17ee, #120e0de8); border-bottom: 1px solid #62472b; }
+.seven-dice-tavern-hub .sdth-logo { width: 62px; height: 62px; margin: 0; object-fit: contain; border: 0; filter: drop-shadow(0 2px 6px #000); }
+.seven-dice-tavern-hub .sdth-header > div { flex: 1; }
+.seven-dice-tavern-hub .sdth-kicker { color: var(--sdth-gold); font-size: 9px; font-weight: 900; letter-spacing: .27em; }
+.seven-dice-tavern-hub h1, .seven-dice-tavern-hub h2 { color: #fff5dc; font-family: Georgia, serif; }
+.seven-dice-tavern-hub h1 { margin: 3px 0; font-size: 31px; }
+.seven-dice-tavern-hub .sdth-header p { margin: 0; color: #ad9d86; }
+.seven-dice-tavern-hub .sdth-header-icon { color: var(--sdth-gold); font-size: 48px; filter: drop-shadow(0 0 18px #d9ac5266); }
+.seven-dice-tavern-hub .sdth-library, .seven-dice-tavern-hub .sdth-details { min-height: 0; flex: 1; overflow-y: auto; padding: 20px 24px 28px; scrollbar-color: #765734 #16110f; }
+.seven-dice-tavern-hub .sdth-library-title { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.seven-dice-tavern-hub .sdth-library-title span { padding: 5px 8px; color: #1c130a; background: var(--sdth-gold); border-radius: 4px; font-size: 10px; font-weight: 900; }
+.seven-dice-tavern-hub .sdth-library-title p { margin: 0; color: #ad9d86; font-size: 12px; }
+.seven-dice-tavern-hub .sdth-grid { display: grid; grid-template-columns: repeat(2, minmax(300px, 1fr)); gap: 11px; }
+.seven-dice-tavern-hub .sdth-game-card { position: relative; min-height: 132px; display: grid; grid-template-columns: 54px 1fr; grid-template-rows: 1fr auto; gap: 7px 12px; margin: 0; padding: 15px; overflow: hidden; text-align: left; color: #ddd0b8; background: #1c1613dd; border: 1px solid #4f3c2b; border-radius: 9px; box-shadow: none; }
+.seven-dice-tavern-hub .sdth-game-card:hover { border-color: #a07842; background: #271d18; transform: translateY(-1px); }
+.seven-dice-tavern-hub .sdth-game-card.available { background: linear-gradient(135deg, #3f2a1d, #1d1613); border-color: var(--sdth-gold); box-shadow: inset 0 0 25px #d9ac5212; }
+.seven-dice-tavern-hub .sdth-number { position: absolute; top: 8px; right: 10px; color: #6f5a42; font-family: Georgia, serif; font-size: 28px; font-weight: 900; }
+.seven-dice-tavern-hub .sdth-card-icon, .seven-dice-tavern-hub .sdth-game-icon { display: grid; width: 52px; height: 52px; place-items: center; color: var(--sdth-gold); background: #0e0b0a; border: 1px solid #5e472d; border-radius: 50%; font-size: 22px; }
+.seven-dice-tavern-hub .sdth-card-copy { min-width: 0; }
+.seven-dice-tavern-hub .sdth-card-copy h2 { margin: 0 36px 1px 0; font-size: 18px; }
+.seven-dice-tavern-hub .sdth-card-copy > span { color: var(--sdth-gold); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.seven-dice-tavern-hub .sdth-card-copy p { margin: 7px 0 0; color: #a99a86; font-size: 11px; line-height: 1.35; }
+.seven-dice-tavern-hub .sdth-state { grid-column: 1 / -1; width: max-content; padding: 3px 6px; color: #9e8e78; background: #ffffff08; border-radius: 3px; font-size: 8px; text-transform: uppercase; letter-spacing: .08em; }
+.seven-dice-tavern-hub .available .sdth-state { color: #1c130a; background: var(--sdth-gold); }
+.seven-dice-tavern-hub .sdth-back { width: auto; margin: 0 0 12px; padding: 6px 11px; color: #d8c9ad; background: #211915; border: 1px solid #5a442f; border-radius: 5px; }
+.seven-dice-tavern-hub .sdth-detail-card { padding: 22px; background: #1d1613e8; border: 1px solid #59432e; border-radius: 10px; }
+.seven-dice-tavern-hub .sdth-detail-title { display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 1px solid #453526; }
+.seven-dice-tavern-hub .sdth-detail-title span { color: var(--sdth-gold); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.seven-dice-tavern-hub .sdth-detail-title h2 { margin: 2px 0 0; font-size: 27px; }
+.seven-dice-tavern-hub .sdth-rule-copy { padding: 12px 2px; color: #d9cdb8; font-size: 13px; line-height: 1.48; }
+.seven-dice-tavern-hub .sdth-rule-copy p { margin: 7px 0; }
+.seven-dice-tavern-hub .sdth-rule-copy ul { margin: 7px 0; }
+.seven-dice-tavern-hub .sdth-detail-art { float: right; width: auto; max-width: 220px; max-height: 155px; margin: -4px 0 12px 18px; object-fit: contain; border: 0; filter: drop-shadow(0 8px 10px #0009); }
+.seven-dice-tavern-hub .sdth-play { width: auto; min-height: 40px; padding: 0 16px; color: #1c1208; background: linear-gradient(#e6c269, #bd8734); border: 1px solid #f4d990; border-radius: 6px; font-weight: 900; }
+.seven-dice-tavern-hub .sdth-planned { display: flex; align-items: center; gap: 11px; padding: 11px 13px; color: #b9a990; background: #38291b66; border: 1px solid #735435; border-radius: 7px; }
+.seven-dice-tavern-hub .sdth-planned > i { color: var(--sdth-gold); font-size: 22px; }
+.seven-dice-tavern-hub .sdth-planned div { display: flex; flex-direction: column; }
+.seven-dice-tavern-hub .sdth-planned span { font-size: 10px; }
+
+@media (max-width: 760px) {
+  .seven-dice-tavern-hub .sdth-grid { grid-template-columns: 1fr; }
+}

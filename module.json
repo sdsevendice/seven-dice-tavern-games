@@ -1,0 +1,43 @@
+{
+  "id": "seven-dice-tavern-games",
+  "title": "Игры в таверне от Seven Dice",
+  "description": "Коллекция сетевых азартных игр для игроков и NPC: покер на костях и игры Seven Dice.",
+  "version": "0.3.6",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14.364",
+    "maximum": "14"
+  },
+  "authors": [
+    {
+      "name": "Codex & User"
+    }
+  ],
+  "esmodules": [
+    "scripts/main.mjs"
+  ],
+  "styles": [
+    "styles/dice-parlor.css",
+    "styles/tavern-hub.css",
+    "styles/quick-games.css"
+  ],
+  "languages": [
+    {
+      "lang": "ru",
+      "name": "Русский",
+      "path": "lang/ru.json"
+    }
+  ],
+  "socket": true,
+  "relationships": {
+    "recommends": [
+      {
+        "id": "dice-so-nice",
+        "type": "module",
+        "compatibility": {
+          "minimum": "6.2.9"
+        }
+      }
+    ]
+  }
+}
