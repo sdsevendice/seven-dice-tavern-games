@@ -11,7 +11,7 @@
 #seven-dice-tavern-games .window-header { background: #17110f; border-bottom: 1px solid #654a2b; }
 #seven-dice-tavern-games .window-content { padding: 0; overflow: hidden; background: linear-gradient(#160e08c9, #0d0907e6), url("../assets/tavern-table.png") center / cover; }
 .seven-dice-tavern-hub .sdth-shell { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-.seven-dice-tavern-hub button { font-family: inherit; }
+.seven-dice-tavern-hub .sdth-shell button { font-family: inherit; }
 .seven-dice-tavern-hub .sdth-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 28px; background: linear-gradient(100deg, #2a1b17ee, #120e0de8); border-bottom: 1px solid #62472b; }
 .seven-dice-tavern-hub .sdth-logo { width: 62px; height: 62px; margin: 0; object-fit: contain; border: 0; filter: drop-shadow(0 2px 6px #000); }
 .seven-dice-tavern-hub .sdth-header > div { flex: 1; }
@@ -54,3 +54,32 @@
 @media (max-width: 760px) {
   .seven-dice-tavern-hub .sdth-grid { grid-template-columns: 1fr; }
 }
+.seven-dice-tavern-hub .sdth-card-icon img { width:72px;height:72px;object-fit:contain;border:none; }
+
+#seven-dice-tavern-games { container-type:inline-size; }
+.seven-dice-tavern-hub .sdth-shell { font-family:"Segoe UI",Arial,sans-serif; }
+.seven-dice-tavern-hub .sdth-header { padding:24px 28px;gap:20px; }
+.seven-dice-tavern-hub h1 { font:400 34px Georgia,"Times New Roman",serif;letter-spacing:.01em; }
+.seven-dice-tavern-hub .sdth-header>.sdth-collection { flex:0 0 128px;text-align:center;padding-left:22px;border-left:1px solid #a785433d; }
+.seven-dice-tavern-hub .sdth-collection-count { display:flex;align-items:baseline;justify-content:center;gap:7px;font-family:Georgia,serif; }
+.seven-dice-tavern-hub .sdth-collection-count strong { color:#f5d68e;font-size:34px;font-weight:400; }
+.seven-dice-tavern-hub .sdth-collection-count span { color:#b49b77;font-size:22px; }
+.seven-dice-tavern-hub .sdth-collection small { font-size:8px;letter-spacing:.12em;color:#bdab8b; }
+.seven-dice-tavern-hub .sdth-collection-slots { display:flex;justify-content:center;gap:4px;margin:7px 0; }
+.seven-dice-tavern-hub .sdth-collection-slots i { width:8px;height:5px;border:1px solid #816741;border-radius:2px; }
+.seven-dice-tavern-hub .sdth-collection-slots i.ready { background:#e3be6f;box-shadow:0 0 6px #e5bb5444; }
+.seven-dice-tavern-hub .sdth-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:14px; }
+.seven-dice-tavern-hub .sdth-game-card { min-height:142px;grid-template-columns:78px minmax(0,1fr);grid-template-rows:1fr;align-items:center;gap:16px;padding:22px;border-radius:12px; }
+.seven-dice-tavern-hub .sdth-card-icon { width:72px;height:72px;border-radius:14px;border-color:#9e783b40;background:#110d0a55; }
+.seven-dice-tavern-hub .sdth-card-icon img { width:66px;height:66px; }
+.seven-dice-tavern-hub .sdth-card-copy h2 { font:400 22px/1.2 Georgia,"Times New Roman",serif;margin:0 15px 10px 0; }
+.seven-dice-tavern-hub .sdth-card-copy>span { font:400 11px "Segoe UI",Arial,sans-serif;letter-spacing:.02em;text-transform:none; }
+.seven-dice-tavern-hub .sdth-number { top:9px;right:14px;font:12px "Segoe UI",Arial,sans-serif;letter-spacing:.1em; }
+.seven-dice-tavern-hub .sdth-card-action,.seven-dice-tavern-hub .sdth-construction { position:absolute;right:13px;bottom:11px;color:#dab36a; }
+.seven-dice-tavern-hub .sdth-game-card.in-development { cursor:default;opacity:1;background:repeating-linear-gradient(135deg,#b99e6a04 0 7px,transparent 7px 14px),#171310c9;border:1px dashed #716044;box-shadow:none; }
+.seven-dice-tavern-hub .in-development .sdth-card-copy h2 { color:#ad9e86; }
+.seven-dice-tavern-hub .in-development .sdth-card-icon { filter:grayscale(1);opacity:.5; }
+.seven-dice-tavern-hub .sdth-game-card.in-development:hover { transform:none;background-color:#171310c9;border-color:#716044; }
+.seven-dice-tavern-hub .sdth-game-card:focus-visible { outline:2px solid #f4d698;outline-offset:3px; }
+@container(max-width:680px){.seven-dice-tavern-hub .sdth-grid{grid-template-columns:1fr}.seven-dice-tavern-hub .sdth-header{padding:18px;gap:12px}.seven-dice-tavern-hub h1{font-size:27px}.seven-dice-tavern-hub .sdth-header>.sdth-collection{flex-basis:96px;padding-left:12px}.seven-dice-tavern-hub .sdth-logo{width:42px;height:42px}}
+.seven-dice-tavern-hub .sdth-card-copy .sdth-brief { margin:10px 0 0;font-size:12px;line-height:1.45;color:#cebea5;text-transform:none;letter-spacing:0; }

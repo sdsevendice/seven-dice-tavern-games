@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {saveRecovery,loadRecovery} from '../scripts/recovery.mjs';
+const store=new Map();
+globalThis.sessionStorage={setItem:(k,v)=>store.set(k,v),getItem:k=>store.get(k),removeItem:k=>store.delete(k)};
+globalThis.game={user:{id:'gm',isGM:true},world:{id:'test'}};
+const state={id:'party',phase:'playing',participants:[{dice:[1,2,3,4,5]}]};
+saveRecovery('poker',state);assert.deepEqual(loadRecovery('poker'),state);
+game.user={id:'player',isGM:false};assert.equal(loadRecovery('poker'),null);
+game.user={id:'gm',isGM:true};saveRecovery('poker',null);assert.equal(loadRecovery('poker'),null);
+console.log('Browser recovery: roundtrip, GM-only access and clear passed.');

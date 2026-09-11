@@ -22,10 +22,14 @@ jobs:
           node tests/engine.test.mjs
           node tests/quick-engine.test.mjs
           node tests/poker-session.test.mjs
+          node tests/quick-session.test.mjs
+          node tests/recovery.test.mjs
+          node tests/npc-drop.test.mjs
+          node tests/dartboard-art.test.mjs
           node -e 'const m = require("./module.json"); if (process.env.GITHUB_REF_NAME !== "v" + m.version) process.exit(1);'
           zip -r module.zip assets lang scripts styles templates module.json README.md CHANGELOG.md
 
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" module.json module.zip --title "Seven Dice Tavern Games ${GITHUB_REF_NAME}" --generate-notes
+        run: gh release create "${GITHUB_REF_NAME}" module.json module.zip --title "Игры в таверне от Seven Dice ${GITHUB_REF_NAME}" --notes-file RELEASE_NOTES.md

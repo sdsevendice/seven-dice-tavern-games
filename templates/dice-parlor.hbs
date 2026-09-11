@@ -4,7 +4,7 @@
       <span class="dp-kicker">ИГОРНЫЙ ДОМ</span>
       <h1>Покер на костях</h1>
     </div>
-    <button type="button" class="dp-rules-button" data-action="rules"><i class="fa-solid fa-book-open"></i> Правила</button>
+    <button type="button" class="dp-rules-button" data-action="sync" title="Получить актуальное состояние стола">Обновить</button><button type="button" class="dp-rules-button" data-action="rules"><i class="fa-solid fa-book-open"></i> Правила</button>
   </header>
 
   {{#if rulesOpen}}
@@ -13,15 +13,15 @@
       <h2>Ставки и очередность</h2>
       <p>Участники заранее договариваются о ставке, которую получит победитель. Перед началом каждый бросает 1d20; первым ходит участник с наибольшим результатом. При равенстве спорящие перебрасывают 1d20.</p>
       <h2>Первый бросок</h2>
-      <p>Участник бросает 5d6 и объявляет, какие кости откладывает в свою финальную руку. После этого первый бросок делает следующий участник.</p>
+      <p>Все участники независимо бросают свои 5d6, выбирают оставляемые кости и нажимают «Готов». Чужие результаты скрыты. После подтверждения выбор изменить нельзя: следующий этап ждёт готовности всех.</p>
       <h2>Второй бросок</h2>
       <p>Перебрасываются только неотложенные кости. Новые результаты можно добавить к руке, ничего не брать («остаться») или вернуть в переброс любое число костей, отложенных после первого броска.</p>
       <h2>Торговля</h2>
-      <p>После первого круга бросков проходит общая торговля. Начиная со второго круга, после каждого хода первым торгуется бросавший: чек (без повышения), повышение или пас. Все остальные отвечают по очереди. После повышения нужно уравнять, повысить ещё раз или спасовать. Пока торговля не закончена, следующий участник не может бросать кости. Даже готовая рука участвует в торговле; раскрытие происходит только после последних ответов.</p>
+      <p>После каждого общего круга, когда все нажали «Готов», проходит торговля по очереди, определённой d20. Можно сделать чек, повысить или спасовать. На повышение остальные отвечают: уравнять, повысить ещё раз или пас. Следующий общий бросок доступен только после завершения торговли. В следующем круге даже все пять оставленных костей можно пересмотреть или сохранить без броска. После финального броска также нужно нажать «Готов»; раскрытие происходит после заключительной торговли.</p>
     </div>
     <div>
       <h2>Финальный бросок и пас</h2>
-      <p>Все неотложенные кости бросаются в последний раз и автоматически входят в финальную руку. Если пять костей отложены раньше, рука завершается досрочно. Спасовавший выходит из партии, а все уже внесённые им деньги остаются в общем банке. Дополнительного штрафа за пас нет.</p>
+      <p>Перед броском нового круга можно вернуть в переброс любые ранее оставленные кости, даже если оставлены все пять. Можно сохранить все пять без броска и нажать «Готов». После подтверждения выбор заблокирован до следующего круга. В третьем круге выпавшие значения окончательны. Спасовавший выходит из партии, а все уже внесённые им деньги остаются в общем банке. Дополнительного штрафа за пас нет.</p>
       <h2>Комбинации</h2>
       <p class="dp-ranking-direction"><i class="fa-solid fa-arrow-down"></i> От сильнейшей комбинации к слабейшей</p>
       <div class="dp-hand-examples">
@@ -54,6 +54,7 @@
       <section>
         <span class="dp-step">2</span>
         <h2>NPC мастера</h2>
+        <div class="sd-npc-drop"><p>Перетащите актёра сюда</p><div class="sd-npc-list"></div></div>
         <textarea name="npcs" rows="5" placeholder="По одному имени на строку&#10;Костолом Бренн&#10;Госпожа Удача"></textarea>
         <p class="dp-hint">Всего за столом может быть от 2 до 6 участников.</p>
       </section>
@@ -63,7 +64,7 @@
         <input type="text" name="bet" placeholder="Например: 10 зм">
         <label class="dp-field-label" for="dp-pool">Общий банк</label>
         <input id="dp-pool" type="text" name="pool" placeholder="Пусто = ставка × участники">
-        <p class="dp-hint">Банк видят все участники. Деньги с листов пока не списываются.</p>
+        <p class="dp-hint">Банк видят все. Сумма сверх взносов считается призом от заведения. Деньги с листов не списываются.</p>
         <button type="button" class="dp-primary" data-action="create"><i class="fa-solid fa-play"></i> Открыть стол</button>
       </section>
     </main>
@@ -72,6 +73,7 @@
     {{/if}}
   {{else}}
   <main class="dp-game">
+    <nav class="dp-stage-steps" aria-label="Этапы партии">{{#each stageSteps}}<span class="{{#if current}}current{{/if}}" {{#if current}}aria-current="step"{{/if}}><b>{{number}}</b>{{label}}</span>{{/each}}</nav>
     <section class="dp-table-info">
       <div><span>СТАВКА</span><strong>{{table.bet}}</strong></div>
       <div class="dp-pool"><span>ОБЩИЙ БАНК</span><strong><i class="fa-solid fa-coins"></i> {{table.pool}}</strong></div>
@@ -82,13 +84,14 @@
     <section class="dp-participants">
       {{#each table.participants}}
       <article class="dp-participant {{#if isActive}}active{{/if}} {{#if isWinner}}winner{{/if}} {{#if folded}}folded{{/if}}">
-        <div class="dp-avatar"><i class="fa-solid {{icon}}"></i></div>
+        <div class="dp-avatar">{{#if portrait}}<img src="{{portrait}}" alt="{{name}}">{{else}}<span aria-hidden="true">{{initial}}</span>{{/if}}</div>
         <div class="dp-participant-main"><strong>{{name}}</strong><span>{{status}} · бросков: {{rollCount}}/3</span></div>
+        {{#if offline}}<small>Не в сети</small>{{#if ../isGM}}<button data-action="reclaim" data-participant-id="{{id}}">Принять управление</button>{{/if}}{{/if}}
         {{#unless ../table.isFinished}}
           {{#if privateDiceText}}<div class="dp-private-mini"><span>{{privateDiceText}}</span><strong>{{privateHandName}}</strong></div>{{/if}}
         {{/unless}}
         {{#if ../table.isFinished}}
-          {{#unless folded}}<div class="dp-reveal"><span>{{diceText}}</span><strong>{{handName}}</strong></div>{{/unless}}
+          {{#unless folded}}<div class="dp-reveal"><span class="dp-revealed-faces">{{#each revealedDice}}<span class="{{#if emphasized}}emphasized{{/if}}" title="{{value}}">{{face}}</span>{{/each}}</span><strong>{{handName}}</strong></div>{{/unless}}
         {{else}}
           {{#if ../table.isBetting}}
             <div class="dp-held">Внесено: {{committed}} {{../table.currency}}</div>
@@ -99,9 +102,12 @@
       </article>
       {{/each}}
     </section>
+    {{#unless table.isFinished}}<p class="dp-step-hint">{{stepHint}}</p>{{/unless}}
+    {{#if readiness}}<p class="dp-step-hint" role="status">{{readiness}}</p>{{/if}}
+    {{#each bettingHands}}<section class="dp-betting-hand"><header class="dp-kept-heading"><span>{{name}}</span><small>ОСТАВЛЕНО {{count}} / 5</small></header><div class="dp-kept-tray">{{#each dice}}<span class="dp-static-die dp-carved-die" role="img" aria-label="Оставленная кость {{value}}" title="{{value}}"><span class="dp-pip-grid" aria-hidden="true">{{#each pips}}<i style="grid-row:{{row}};grid-column:{{column}}"></i>{{/each}}</span></span>{{/each}}{{#each emptySlots}}<span class="dp-empty-slot" aria-hidden="true"></span>{{/each}}</div>{{#if combination}}<strong class="dp-kept-combination">{{combination}}</strong>{{else}}<p class="dp-kept-empty">Выберите кости, которые хотите сохранить</p>{{/if}}</section>{{/each}}
 
     {{#if table.isFinished}}
-    <section class="dp-result"><i class="fa-solid fa-crown"></i><h2>{{table.resultText}}</h2><p>Финальные руки раскрыты, результат опубликован в чат.</p></section>
+    <section class="dp-result"><span class="dp-result-kicker">ПАРТИЯ ЗАВЕРШЕНА</span><div class="dp-winner-cards">{{#each resultWinners}}<article class="dp-winner-card"><div class="dp-winner-portrait">{{#if portrait}}<img src="{{portrait}}" alt="">{{else}}{{initial}}{{/if}}</div><h2>{{name}}</h2>{{#if combination}}<strong>{{combination}}</strong>{{/if}}<div class="dp-kept-tray">{{#each dice}}<span class="dp-static-die dp-carved-die" role="img" aria-label="Кость {{value}}"><span class="dp-pip-grid" aria-hidden="true">{{#each pips}}<i style="grid-row:{{row}};grid-column:{{column}}"></i>{{/each}}</span></span>{{/each}}</div></article>{{/each}}</div><p class="dp-prize">Банк победителям: <strong>{{table.pool}}</strong></p><h2>{{table.resultText}}</h2>{{#if resultCaption}}<p>{{resultCaption}}</p>{{/if}}{{#if isGM}}<button class="dp-primary" data-action="replay">Сыграть ещё раз</button>{{/if}}</section>
     {{else}}
     {{#if table.isBetting}}
     <section class="dp-betting-board">
@@ -110,14 +116,7 @@
       <h2>Текущая ставка: {{table.bet}}</h2>
       <p>Решение принимает <strong>{{bettingActive.name}}</strong></p>
       {{#if canBet}}
-      <div class="dp-bet-controls">
-        <button type="button" class="dp-primary" data-action="callStake" data-participant-id="{{bettingActive.id}}"><i class="fa-solid fa-equals"></i> {{callLabel}}</button>
-        <div class="dp-raise-control">
-          <input type="text" name="raiseAmount" placeholder="Повысить на, например 5">
-          <button type="button" class="dp-primary" data-action="raiseStake" data-participant-id="{{bettingActive.id}}"><i class="fa-solid fa-arrow-trend-up"></i> Повысить</button>
-        </div>
-        <button type="button" class="dp-danger" data-action="betFold" data-participant-id="{{bettingActive.id}}"><i class="fa-solid fa-flag"></i> Пас</button>
-      </div>
+      <p class="dp-contribution">{{contributionText}}</p>
       <p class="dp-bet-hint">При повышении ваш взнос сразу добавится в банк, а остальные участники получат новый выбор.</p>
       {{else}}
       <p class="dp-observer"><i class="fa-solid fa-lock"></i> Ожидание решения участника…</p>
@@ -125,23 +124,23 @@
     </section>
     {{else}}
     <section class="dp-board">
-      <div class="dp-turn-label">ХОД УЧАСТНИКА</div>
+      <div class="dp-turn-label">{{#if canRoll}}ВАШ ХОД{{else}}{{#if canChoose}}ВАШ ХОД{{else}}ХОД УЧАСТНИКА{{/if}}{{/if}}</div>
       <h2>{{active.name}}</h2>
       {{#if canRoll}}
         <div class="dp-hidden-hand"><i class="fa-solid fa-eye-slash"></i><p>{{#if privateCombination}}Ваши отложенные кости готовы{{else}}Значения костей увидит только бросающий{{/if}}</p></div>
       {{/if}}
-      {{#if canChoose}}<p class="dp-choice-help"><strong>Нажмите на кости, которые хотите оставить.</strong><br>Они перейдут в зону «Оставляю». Повторное нажатие вернёт кость на переброс. Затем завершите ход.</p>{{/if}}
+      {{#if canChoose}}<p class="dp-choice-help">{{#if finalChoice}}<strong>Финальная рука собрана. Нажмите «Готов».</strong>{{else}}<strong>Нажмите на кости, которые хотите оставить.</strong><br>Повторное нажатие вернёт кость на переброс. Затем нажмите «{{readyLabel}}».{{/if}}</p>{{/if}}
       {{#if showDiceZones}}
       <div class="dp-dice-zones">
         <section class="dp-dice-zone dp-free-zone" aria-label="Кости на переброс">
-          <h3><i class="fa-solid fa-rotate"></i> На переброс · {{freeCount}}</h3>
+          <h3><i class="fa-solid fa-rotate"></i> Будут переброшены · {{freeCount}}</h3>
           <div class="dp-dice-row">
             {{#each freeDice}}<button type="button" class="dp-die" data-action="toggleDie" data-participant-id="{{../active.id}}" data-index="{{index}}" title="Оставить кость {{value}}" aria-label="Оставить кость {{value}}" {{#unless selectable}}disabled{{/unless}}><span>{{value}}</span><small>ОСТАВИТЬ ↓</small></button>{{/each}}
             {{#unless freeCount}}<p class="dp-zone-empty">Все пять костей оставлены. Завершите ход, чтобы закрепить руку.</p>{{/unless}}
           </div>
         </section>
         <section class="dp-dice-zone dp-held-zone" aria-label="Оставленные кости">
-          <h3><i class="fa-solid fa-lock"></i> Оставляю · {{heldCount}}/5</h3>
+          <h3><i class="fa-solid fa-lock"></i> Оставлены — не перебрасываются · {{heldCount}}/5</h3>
           <div class="dp-dice-row">
             {{#each heldDice}}<button type="button" class="dp-die held" data-action="toggleDie" data-participant-id="{{../active.id}}" data-index="{{index}}" title="Вернуть кость {{value}} на переброс" aria-label="Вернуть кость {{value}} на переброс" {{#unless selectable}}disabled{{/unless}}><span>{{value}}</span><small>✓ ОСТАЁТСЯ</small></button>{{/each}}
             {{#unless heldCount}}<p class="dp-zone-empty">Нажмите на нужные кости сверху — они останутся здесь.</p>{{/unless}}
@@ -149,24 +148,35 @@
         </section>
       </div>
       {{else}}
-      <div class="dp-dice-row">
+      {{#if active}}<div class="dp-dice-row">
         {{#each dice}}
         <button type="button" class="dp-die {{#if held}}held{{/if}}" data-action="toggleDie" data-participant-id="{{../active.id}}" data-index="{{index}}" {{#unless selectable}}disabled{{/unless}}>
           <span>{{value}}</span>{{#if held}}<small>ОСТАВЛЕНА</small>{{/if}}
         </button>
         {{/each}}
-      </div>
+      </div>{{/if}}
       {{/if}}
       {{#if privateCombination}}<div class="dp-combination">Текущая комбинация: <strong>{{privateCombination}}</strong></div>{{/if}}
-      <div class="dp-actions">
-        {{#if canRoll}}<button type="button" class="dp-primary" data-action="roll" data-participant-id="{{active.id}}"><i class="fa-solid fa-dice"></i> Бросить {{freeCount}} костей</button>{{/if}}
-        {{#if canChoose}}<button type="button" class="dp-primary" data-action="endTurn" data-participant-id="{{active.id}}"><i class="fa-solid fa-check"></i> Завершить ход</button>{{/if}}
-        {{#if canFold}}<button type="button" class="dp-danger" data-action="fold" data-participant-id="{{active.id}}"><i class="fa-solid fa-flag"></i> Пас</button>{{/if}}
-      </div>
       {{#unless canRoll}}{{#unless canChoose}}<p class="dp-observer"><i class="fa-solid fa-lock"></i> Ожидание действия участника…</p>{{/unless}}{{/unless}}
     </section>
     {{/if}}
     {{/if}}
+    {{#unless table.isFinished}}<section class="dp-table-reference" aria-label="Памятка комбинаций"><header><strong>Комбинации</strong><small>ОТ СИЛЬНЫХ К СЛАБЫМ · выделены ваши оставленные</small></header><div class="dp-reference-grid">{{#each handReference}}<div class="dp-reference-item {{#if current}}current{{/if}}"><span class="dp-reference-order">{{order}}</span><div><strong>{{name}}</strong><span class="dp-reference-example" aria-label="Пример: {{numbers}}" title="{{numbers}}">{{example}}</span></div>{{#if current}}<span class="dp-reference-check" aria-label="Есть среди оставленных">✓</span>{{/if}}</div>{{/each}}</div></section>{{/unless}}
+    {{#if table.history}}<details class="dp-history"><summary>Последние действия</summary><ol>{{#each table.history}}<li>{{this}}</li>{{/each}}</ol></details>{{/if}}
   </main>
+  {{#unless table.isFinished}}<footer class="dp-fixed-actions">{{#if table.isBetting}}{{#if canBet}}      <div class="dp-bet-controls">
+        <button type="button" class="dp-primary" data-action="callStake" data-participant-id="{{bettingActive.id}}"><i class="fa-solid fa-equals"></i> {{callLabel}}</button>
+        <div class="dp-raise-control">
+          <input type="text" name="raiseAmount" inputmode="decimal" aria-label="Сумма повышения">
+          <button type="button" class="dp-primary" data-action="raiseStake" data-participant-id="{{bettingActive.id}}"><i class="fa-solid fa-arrow-trend-up"></i> Повысить</button>
+        </div>
+        <button type="button" class="dp-danger" data-action="betFold" data-participant-id="{{bettingActive.id}}"><i class="fa-solid fa-flag"></i> Пас</button>
+      </div>
+{{else}}<span>Ждём решения: {{bettingActive.name}}</span>{{/if}}{{else}}      <div class="dp-actions">
+        {{#if canRoll}}<button type="button" class="dp-primary" data-action="roll" data-participant-id="{{active.id}}"><i class="fa-solid fa-dice"></i> Бросить {{freeCount}} костей</button>{{/if}}
+        {{#if canChoose}}<button type="button" class="dp-primary" data-action="endTurn" data-participant-id="{{active.id}}"><i class="fa-solid fa-check"></i> {{readyLabel}}</button>{{/if}}
+        {{#if canFold}}<button type="button" class="dp-danger" data-action="fold" data-participant-id="{{active.id}}"><i class="fa-solid fa-flag"></i> Пас</button>{{/if}}
+      </div>
+{{#unless canRoll}}{{#unless canChoose}}<span>Готово — ждём остальных участников</span>{{/unless}}{{/unless}}{{/if}}</footer>{{/unless}}
   {{/unless}}
 </div>

@@ -1,6 +1,8 @@
 import { analyzeHand, determineWinners, HAND_NAMES } from "./engine.mjs";
 import { TAVERN_GAMES } from "./catalog.mjs";
 import { QuickGamesApp } from "./quick-games.mjs";
+import { saveRecovery, loadRecovery } from "./recovery.mjs";
+import { bindNpcDrop, resolveNpcActors } from "./npc-drop.mjs";
 
 const MODULE_ID = "seven-dice-tavern-games";
 const MODULE_PATH = `modules/${MODULE_ID}`;
@@ -11,6 +13,7 @@ let hostTable = null;
 let publicTable = null;
 let privateHands = {};
 let hostQueue = Promise.resolve();
+let requestPending = false;
 
 function activeHost() {
   return game.users
@@ -36,9 +39,12 @@ function refreshApp() {
 
 function publicSnapshot() {
   if (!hostTable) return null;
-  const revealed = hostTable.phase === "finished";
+  const revealed = hostTable.phase === "finished" && hostTable.finishReason !== "fold";
   return {
     id: hostTable.id,
+    revision: hostTable.revision ?? 0,
+    simultaneous: Boolean(hostTable.simultaneous),
+    finishReason: hostTable.finishReason,
     phase: hostTable.phase,
     bet: hostTable.bet,
     pool: hostTable.pool,
@@ -51,12 +57,18 @@ function publicSnapshot() {
     activeParticipantId: hostTable.activeParticipantId,
     winnerIds: hostTable.winnerIds,
     resultText: hostTable.resultText,
+    history: hostTable.history ?? [],
     participants: hostTable.participants.map((participant) => ({
       id: participant.id,
       name: participant.name,
       kind: participant.kind,
       controllerUserId: participant.controllerUserId,
+      portrait: participant.portrait,
+      actorUuid: participant.actorUuid,
       rollCount: participant.rollCount,
+      awaitingChoice: participant.awaitingChoice,
+      actionRevision: participant.actionRevision ?? 0,
+      readyRound: participant.readyRound ?? 0,
       heldCount: participant.held.filter(Boolean).length,
       completed: participant.completed,
       folded: participant.folded,
@@ -82,6 +94,7 @@ function privateSnapshotFor(userId) {
 }
 
 function acceptState(state) {
+  requestPending = false;
   publicTable = state;
   if (!state) privateHands = {};
   refreshApp();
@@ -111,6 +124,8 @@ function sendStateTo(userId) {
 
 function broadcastState() {
   if (!isHost()) return;
+  if (hostTable) hostTable.revision = (hostTable.revision ?? 0) + 1;
+  saveRecovery("poker", hostTable);
   for (const user of game.users.filter((entry) => entry.active)) sendStateTo(user.id);
 }
 
@@ -118,7 +133,9 @@ function participantForAction(senderId, participantId) {
   const participant = hostTable?.participants.find((entry) => entry.id === participantId);
   if (!participant) throw new Error("Участник не найден.");
   if (hostTable.phase !== "playing") throw new Error(hostTable.phase === "betting" ? "Сначала завершите торговлю — бросок пока недоступен." : "Партия уже завершена.");
-  if (hostTable.activeParticipantId !== participant.id) throw new Error("Сейчас ход другого участника.");
+  if (hostTable.simultaneous) {
+    if (participant.folded || (participant.readyRound ?? 0) >= hostTable.round) throw new Error("Вы уже готовы. Дождитесь остальных участников.");
+  } else if (hostTable.activeParticipantId !== participant.id) throw new Error("Сейчас ход другого участника.");
   if (participant.controllerUserId !== senderId) throw new Error("Этим участником управляет другой пользователь.");
   return participant;
 }
@@ -189,7 +206,28 @@ function updateMoneyLabels() {
   hostTable.pool = formatMoney(hostTable.poolAmount, hostTable.currency);
 }
 
+function recordAction(text) {
+  if (hostTable) hostTable.history = [...(hostTable.history ?? []), text].slice(-12);
+}
+
+function keptCombination(dice) {
+  if (!dice.length) return "";
+  if (dice.length === 5) return analyzeHand(dice).name;
+  const counts = [...new Set(dice)].map(value => dice.filter(die => die === value).length);
+  if (counts.includes(4)) return "Каре";
+  if (counts.includes(3)) return "Тройка";
+  if (counts.filter(count => count === 2).length === 2) return "Две пары";
+  if (counts.includes(2)) return "Пара";
+  return "Пока без комбинации";
+}
+
+function diePips(value) {
+  const positions = {1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
+  return (positions[value] ?? []).map(position => ({row:Math.ceil(position / 3),column:(position - 1) % 3 + 1}));
+}
+
 function finishTable(reason = "showdown") {
+  hostTable.finishReason = reason;
   hostTable.phase = "finished";
   hostTable.activeParticipantId = null;
   const survivors = hostTable.participants.filter((participant) => !participant.folded);
@@ -205,13 +243,24 @@ function finishTable(reason = "showdown") {
     : winners.length > 1
       ? `Ничья: ${winnerNames.join(", ")}.`
       : `Победитель: ${winnerNames[0]}.`;
-  postResultToChat();
+  if (reason !== "fold" && winners.length === 1) {
+    const best = winners[0].hand;
+    const runner = determineWinners(contenders.filter(p => p.id !== winners[0].id))[0]?.hand;
+    if (runner) {
+      if (best.rank !== runner.rank) hostTable.resultText += ` ${best.name} сильнее комбинации «${runner.name}».`;
+      else {
+        const index = best.tiebreak.findIndex((value, i) => value !== runner.tiebreak[i]);
+        if (index >= 0) hostTable.resultText += ` При одинаковой комбинации «${best.name}» решает номинал ${best.tiebreak[index]} против ${runner.tiebreak[index]}.`;
+      }
+    }
+  }
+  postResultToChat().catch(error => { console.error(`${MODULE_ID} | Итог сохранён, чат недоступен`, error); notifyError("Партия завершена, но итог не удалось опубликовать в чат."); });
 }
 
 async function postResultToChat() {
   const rows = hostTable.participants.map((participant) => {
     if (participant.folded) return `<li><strong>${foundry.utils.escapeHTML(participant.name)}</strong> — пас; внесённые ${foundry.utils.escapeHTML(participant.foldLoss)} остаются в банке</li>`;
-    if (!participant.hand) return `<li><strong>${foundry.utils.escapeHTML(participant.name)}</strong> — победа без раскрытия руки</li>`;
+    if (hostTable.finishReason === "fold" || !participant.hand) return `<li><strong>${foundry.utils.escapeHTML(participant.name)}</strong> — победа без раскрытия руки</li>`;
     return `<li><strong>${foundry.utils.escapeHTML(participant.name)}</strong>: ${participant.dice.join(" · ")} — ${participant.hand.name}</li>`;
   }).join("");
   await ChatMessage.create({
@@ -231,6 +280,7 @@ function enterBetting(round, starterId = null, resumeId = null) {
   hostTable.bettingAfterRound = round;
   hostTable.bettingResumeId = resumeId;
   hostTable.bettingResponses = [];
+  hostTable.bettingRaised = false;
   hostTable.targetStake = hostTable.stakeAmount;
   hostTable.bettingActiveParticipantId = starterId ?? live[0].id;
   return true;
@@ -251,6 +301,11 @@ function startNextRound() {
   hostTable.bettingResponses = [];
   if (resumeId) {
     advanceTurn(resumeId, true);
+    return;
+  }
+  if (hostTable.simultaneous) {
+    if (hostTable.round > 3) { finishTable(); return; }
+    hostTable.activeParticipantId = live[0]?.id ?? null;
     return;
   }
   hostTable.activeParticipantId = hostTable.participants.find((participant) => !participant.folded && !participant.completed)?.id ?? null;
@@ -283,6 +338,10 @@ function advanceTurn(currentId, afterBetting = false) {
     const survivor = live[0];
     if (survivor && !survivor.hand && survivor.dice.every(Number.isInteger)) survivor.hand = analyzeHand(survivor.dice);
     finishTable("fold");
+    return;
+  }
+  if (hostTable.simultaneous) {
+    if (live.every(p => (p.readyRound ?? 0) >= hostTable.round)) enterBetting(hostTable.round);
     return;
   }
   // From the second round, settle bets after each hand, before the next roll.
@@ -320,23 +379,49 @@ async function handleHostRequest(packet) {
       sendStateTo(packet.senderId);
       return;
     }
+    const concurrent = hostTable?.simultaneous && hostTable.phase === "playing" && packet.phase === "playing" && packet.round === hostTable.round && ["roll", "toggle", "endTurn", "fold"].includes(packet.action);
+    const actor = hostTable?.participants.find(p => p.id === packet.participantId);
+    if (packet.revision !== undefined && (packet.tableId !== (hostTable?.id ?? null) || (concurrent ? packet.actionRevision !== (actor?.actionRevision ?? 0) : packet.revision !== (hostTable?.revision ?? 0)))) throw new Error("Стол уже изменился. Дождитесь обновления и повторите действие.");
+    if (packet.action === "reclaim") {
+      if (!game.users.get(packet.senderId)?.isGM) throw new Error("Управление может принять только мастер.");
+      const absent = hostTable?.participants.find(p => p.id === packet.participantId);
+      if (!absent || game.users.get(absent.controllerUserId)?.active) throw new Error("Участник ещё подключён.");
+      absent.controllerUserId = packet.senderId;
+      broadcastState();
+      return;
+    }
+    if (packet.action === "replay") {
+      if (hostTable?.phase !== "finished") throw new Error("Сначала завершите партию.");
+      packet.data = hostTable.setup;
+      packet.action = "create";
+    }
 
     if (packet.action === "create") {
       if (!game.users.get(packet.senderId)?.isGM) throw new Error("Создать стол может только мастер.");
+      if (hostTable && hostTable.phase !== "finished") throw new Error("Сначала завершите текущую партию.");
       const requestedUsers = [...new Set(packet.data.userIds ?? [])]
         .map((id) => game.users.get(id))
         .filter((user) => user?.active);
       const npcNames = (packet.data.npcNames ?? []).map((name) => String(name).trim()).filter(Boolean);
+      const npcActors = await resolveNpcActors(packet.data.npcActorUuids ?? []);
+      if (requestedUsers.length + npcNames.length + npcActors.length > MAX_PLAYERS) throw new Error("За столом может быть не больше 6 участников.");
       const participants = [
         ...requestedUsers.map((user) => ({ name: user.name, kind: "player", controllerUserId: user.id })),
-        ...npcNames.map((name) => ({ name, kind: "npc", controllerUserId: packet.senderId }))
+        ...npcNames.map((name) => ({ name, kind: "npc", controllerUserId: packet.senderId })),
+        ...npcActors.map(actor => ({...actor, kind: "npc", controllerUserId: packet.senderId}))
       ].slice(0, MAX_PLAYERS);
       if (participants.length < 2) throw new Error("Нужно выбрать минимум двух участников.");
-      const betMoney = parseMoney(packet.data.bet) ?? { amount: 0, currency: "" };
+      const betMoney = parseMoney(packet.data.bet || "0 зм");
+      if (!betMoney) throw new Error("Укажите корректную ставку, например 1 зм.");
       const poolMoney = parseMoney(packet.data.pool);
+      if (packet.data.pool?.trim() && !poolMoney) throw new Error("Укажите корректный банк или оставьте поле пустым.");
+      if (poolMoney && poolMoney.amount < betMoney.amount * participants.length) throw new Error("Банк не может быть меньше взносов участников.");
+      if (poolMoney?.currency && betMoney.currency && poolMoney.currency !== betMoney.currency) throw new Error("Ставка и банк должны быть в одной валюте.");
       const currency = betMoney.currency || poolMoney?.currency || "зм";
       hostTable = {
         id: makeId(),
+        simultaneous: packet.data.simultaneous !== false,
+        setup: JSON.parse(JSON.stringify(packet.data)),
         phase: "playing",
         bet: "",
         pool: "",
@@ -357,6 +442,7 @@ async function handleHostRequest(packet) {
           dice: [null, null, null, null, null],
           held: [false, false, false, false, false],
           rollCount: 0,
+          readyRound: 0,
           awaitingChoice: false,
           completed: false,
           folded: false,
@@ -384,6 +470,8 @@ async function handleHostRequest(packet) {
         const raise = parseMoney(packet.data.amount);
         if (!raise || raise.amount <= 0 || !Number.isFinite(hostTable.targetStake + raise.amount)) throw new Error("Укажите положительную конечную сумму повышения.");
         hostTable.targetStake += raise.amount;
+        hostTable.bettingRaised = true;
+        recordAction(`${participant.name} повышает на ${formatMoney(raise.amount, hostTable.currency)}`);
         hostTable.stakeAmount = hostTable.targetStake;
         const contribution = Math.max(0, hostTable.targetStake - participant.committed);
         participant.committed = hostTable.targetStake;
@@ -393,13 +481,22 @@ async function handleHostRequest(packet) {
       }
       else if (packet.action === "callStake") {
         const contribution = Math.max(0, hostTable.targetStake - participant.committed);
+        recordAction(`${participant.name}: ${contribution > 0 ? `уравнивает +${formatMoney(contribution, hostTable.currency)}` : "чек"}`);
         participant.committed = hostTable.targetStake;
         hostTable.poolAmount += contribution;
         if (!hostTable.bettingResponses.includes(participant.id)) hostTable.bettingResponses.push(participant.id);
         updateMoneyLabels();
+        // After an individual turn, a check needs no table-wide confirmation.
+        // A raise still resets responses and every survivor must answer it.
+        if (hostTable.bettingResumeId && hostTable.bettingResponses.length === 1 && contribution === 0 && !hostTable.bettingRaised) {
+          startNextRound();
+          broadcastState();
+          return;
+        }
       }
       else {
         participant.folded = true;
+        recordAction(`${participant.name} пасует`);
         participant.foldLoss = formatMoney(participant.committed, hostTable.currency);
         participant.completed = true;
         participant.awaitingChoice = false;
@@ -414,28 +511,39 @@ async function handleHostRequest(packet) {
     if (packet.action === "roll") {
       if (participant.awaitingChoice) throw new Error("Сначала завершите выбор костей.");
       const openIndexes = participant.held.map((held, index) => held ? null : index).filter((index) => index !== null);
+      if (hostTable.simultaneous && !openIndexes.length) throw new Error("Все кости оставлены. Верните нужные на переброс или нажмите «Готов».");
       const values = await rollD6(openIndexes.length);
       openIndexes.forEach((index, valueIndex) => { participant.dice[index] = values[valueIndex]; });
-      participant.rollCount += 1;
+      participant.rollCount = hostTable.simultaneous ? hostTable.round : participant.rollCount + 1;
       if (participant.rollCount >= 3 || participant.held.every(Boolean)) {
         participant.held.fill(true);
-        participant.awaitingChoice = false;
-        participant.completed = true;
-        participant.hand = analyzeHand(participant.dice);
-        advanceTurn(participant.id);
+        participant.awaitingChoice = Boolean(hostTable.simultaneous);
+        if (!hostTable.simultaneous) {
+          participant.completed = true;
+          participant.hand = analyzeHand(participant.dice);
+          advanceTurn(participant.id);
+        }
       }
       else {
         participant.awaitingChoice = true;
       }
     }
     else if (packet.action === "toggle") {
-      if (!participant.awaitingChoice) throw new Error("Сначала бросьте кости.");
+      const beforeRoll = hostTable.simultaneous && participant.rollCount < hostTable.round && participant.dice.every(Number.isInteger);
+      if (!participant.awaitingChoice && !beforeRoll) throw new Error("Сначала бросьте кости.");
+      if (participant.rollCount >= 3) throw new Error("Это финальный бросок. Нажмите «Готов».");
       const index = Number(packet.data.index);
       if (!Number.isInteger(index) || index < 0 || index > 4) throw new Error("Некорректная кость.");
       participant.held[index] = !participant.held[index];
+      participant.completed = false;
+      participant.hand = null;
     }
     else if (packet.action === "endTurn") {
-      if (!participant.awaitingChoice) throw new Error("Сначала бросьте кости.");
+      if (!participant.awaitingChoice && !(hostTable.simultaneous && participant.held.every(Boolean) && participant.dice.every(Number.isInteger))) throw new Error("Сначала бросьте кости.");
+      if (hostTable.simultaneous) {
+        participant.readyRound = hostTable.round;
+        participant.rollCount = hostTable.round;
+      }
       participant.awaitingChoice = false;
       if (participant.held.every(Boolean)) {
         participant.completed = true;
@@ -454,9 +562,13 @@ async function handleHostRequest(packet) {
     else {
       throw new Error("Неизвестное действие.");
     }
+    const labels = {roll: "бросает кости", endTurn: "завершает выбор костей", fold: "пасует"};
+    participant.actionRevision = (participant.actionRevision ?? 0) + 1;
+    if (labels[packet.action]) recordAction(`${participant.name} — ${labels[packet.action]}`);
     broadcastState();
   }
   catch (error) {
+    requestPending = false;
     console.warn(`${MODULE_ID} | Запрос отклонён`, error);
     const targetUserId = packet.senderId;
     if (targetUserId === game.user.id) notifyError(error.message);
@@ -472,10 +584,12 @@ function enqueueHostRequest(packet) {
 }
 
 function request(action, data = {}, participantId = null) {
-  const packet = { type: "request", action, data, participantId, senderId: game.user.id };
+  if (action !== "sync" && requestPending) return;
+  if (action !== "sync") requestPending = true;
+  const packet = { type: "request", action, data, participantId, senderId: game.user.id, tableId: publicTable?.id ?? null, revision: publicTable?.revision ?? 0, phase: publicTable?.phase, round: publicTable?.round, actionRevision: publicTable?.participants.find(p => p.id === participantId)?.actionRevision ?? 0 };
   if (isHost()) enqueueHostRequest(packet);
   else if (activeHost()) sendPacket(packet);
-  else notifyError("Нет активного мастера, который может вести стол.");
+  else { requestPending = false; notifyError("Нет активного мастера, который может вести стол."); }
 }
 
 function onSocket(packet) {
@@ -487,7 +601,7 @@ function onSocket(packet) {
   if (packet.targetUserId && packet.targetUserId !== game.user.id) return;
   if (packet.type === "state") acceptState(packet.state);
   else if (packet.type === "private") acceptPrivate(packet.state);
-  else if (packet.type === "error") notifyError(packet.message);
+  else if (packet.type === "error") { requestPending = false; notifyError(packet.message); }
 }
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -497,7 +611,7 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static DEFAULT_OPTIONS = {
     id: "seven-dice-poker",
-    classes: ["dice-parlor"],
+    classes: ["seven-dice-poker"],
     tag: "section",
     window: {
       frame: true,
@@ -516,6 +630,9 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
       raiseStake: DiceParlorApp.onRaiseStake,
       betFold: DiceParlorApp.onBetFold,
       reset: DiceParlorApp.onReset,
+      replay: () => request("replay"),
+      sync: () => request("sync"),
+      reclaim: (event, target) => request("reclaim", {}, target.dataset.participantId),
       rules: DiceParlorApp.onRules
     }
   };
@@ -525,6 +642,16 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   rulesOpen = false;
+  movedDie = null;
+
+  _onRender(context, options) {
+    super._onRender(context, options);
+    bindNpcDrop(this);
+    if (this.movedDie !== null) {
+      this.element.querySelector(`.dp-dice-zone .dp-die[data-index="${this.movedDie}"]`)?.classList.add("dp-moved");
+      this.movedDie = null;
+    }
+  }
 
   static open() {
     this.instance ??= new this();
@@ -544,7 +671,8 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _prepareContext() {
     const table = publicTable;
-    const active = table?.participants.find((participant) => participant.id === table.activeParticipantId) ?? null;
+    const pending = table?.participants.filter(p => !p.folded && (table.simultaneous ? (p.readyRound ?? 0) < table.round : !p.completed && (p.rollCount < table.round || p.awaitingChoice))) ?? [];
+    const active = table?.simultaneous ? (table.phase === "playing" ? pending.find(p => p.controllerUserId === game.user.id) : null) : table?.participants.find((participant) => participant.id === table.activeParticipantId) ?? null;
     const myPrivate = active ? privateHands[active.id] : null;
     const controlsActive = Boolean(active && active.controllerUserId === game.user.id);
     const bettingActive = table?.participants.find((participant) => participant.id === table.bettingActiveParticipantId) ?? null;
@@ -554,35 +682,56 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
       index,
       value: value ?? "?",
       held: Boolean(myPrivate?.held?.[index]),
-      selectable: Boolean(controlsActive && myPrivate?.awaitingChoice)
+      selectable: Boolean(controlsActive && active.rollCount < 3 && (myPrivate?.awaitingChoice || (table.simultaneous && active.rollCount < table.round && myPrivate?.dice?.every(Number.isInteger))))
     }));
     const heldDice = dice.filter((die) => die.held);
     const freeDice = dice.filter((die) => !die.held);
     return {
       hasTable: Boolean(table),
+      stageSteps: ["Бросок", "Выбор костей", "Ставки", "Победитель"].map((label,index)=>({label,number:index+1,current:index === (table?.phase === "finished" ? 3 : table?.phase === "betting" ? 2 : (myPrivate?.awaitingChoice || (active?.heldCount === 5)) ? 1 : 0)})),
+      resultWinners: table?.phase === "finished" ? table.participants.filter(p=>table.winnerIds.includes(p.id)).map(p=>({name:p.name,portrait:p.kind !== "npc" ? (game.users.get(p.controllerUserId)?.character?.img || game.users.get(p.controllerUserId)?.avatar) : p.portrait,initial:p.name.slice(0,1),combination:p.hand?.name,dice:p.dice?.map(value=>({value,pips:diePips(value)}))??[]})) : [],
+      readiness: table?.simultaneous && table.phase === "playing" ? `Готовы ${table.participants.filter(p => !p.folded).length - pending.length} из ${table.participants.filter(p => !p.folded).length}. Ждём: ${pending.map(p => p.name).join(", ")}` : "",
+      readyLabel: table?.simultaneous ? "Готов" : "Завершить ход",
       waitingForGm: !table && !game.user.isGM,
       isGM: game.user.isGM,
       isHost: isHost(),
       rulesOpen: this.rulesOpen,
+      bettingHands: table && table.phase !== "finished" ? table.participants.filter(p => !(controlsActive && p.id === active.id) && privateHands[p.id]?.dice?.every(Number.isInteger)).map(p => {
+        const kept = privateHands[p.id].dice.filter((value, index) => privateHands[p.id].held?.[index]);
+        return { name: p.name, count: kept.length, combination: keptCombination(kept), dice: kept.map(value => ({ value, pips: diePips(value) })), emptySlots: Array.from({length:5-kept.length},()=>({})) };
+      }) : [],
+      handReference: [
+        ["Пять одинаковых",[5,5,5,5,5]], ["Каре",[4,4,4,4,1]],
+        ["Фулл-хаус",[6,6,6,3,3]], ["Стрит",[1,2,3,4,5]],
+        ["Тройка",[2,2,2,5,6]], ["Две пары",[5,5,3,3,1]],
+        ["Пара",[6,6,4,2,1]], ["Старшая кость",[6,5,3,2,1]]
+      ].map(([name, values], index) => ({name, order:index+1, example:values.map(value=>String.fromCodePoint(0x267f+value)).join(" "), numbers:values.join(", "), current: Object.values(privateHands).some(hand=>keptCombination(hand.dice.filter((value,i)=>hand.held?.[i]))===name)})),
+      stepHint: table?.phase === "finished" ? "Партия завершена" : controlsBetting ? (amountToCall > 0 ? `Доплатите ${formatMoney(amountToCall, table.currency)}, повысьте ставку или спасуйте.` : "Нажмите «Чек», чтобы не повышать ставку. Либо повысьте её.") : controlsActive ? (myPrivate?.awaitingChoice ? (active.rollCount >= 3 ? "Финальная рука собрана. Нажмите «Готов»." : "Выберите оставляемые кости и подтвердите готовность.") : (freeDice.length ? `Можно вернуть оставленные кости на переброс. Сейчас будут брошены: ${freeDice.length}.` : "Можно вернуть любые кости на переброс или сохранить все пять: нажмите «Готов».")) : "Ожидаем остальных участников. Оставленные кости — перед вами.",
+      contributionText: bettingActive ? `Уже внесено: ${formatMoney(bettingActive.committed, table.currency)} · Доплатить: ${formatMoney(amountToCall, table.currency)} · Итого: ${formatMoney(table.targetStake, table.currency)}` : "",
+      resultCaption: table?.finishReason === "fold" ? "Остальные спасовали — рука победителя не раскрывается." : "",
       activeUsers: game.users.filter((user) => user.active).map((user) => ({ id: user.id, name: user.name, checked: true })),
       table: table ? {
         ...table,
         isFinished: table.phase === "finished",
         isBetting: table.phase === "betting",
-        bettingRoundLabel: table.bettingAfterRound === 1 ? "после первого круга" : "перед следующим броском или раскрытием",
+        bettingRoundLabel: `после ${table.bettingAfterRound}-го круга`,
         roundLabel: table.round === 1 ? "Первый бросок" : table.round === 2 ? "Второй бросок" : "Финальный бросок",
         participants: table.participants.map((participant) => ({
           ...participant,
-          isActive: participant.id === (table.phase === "betting" ? table.bettingActiveParticipantId : table.activeParticipantId),
+          isActive: table.simultaneous && table.phase === "playing" ? pending.some(p => p.id === participant.id) : participant.id === (table.phase === "betting" ? table.bettingActiveParticipantId : table.activeParticipantId),
           isWinner: table.winnerIds.includes(participant.id),
+          portrait: participant.kind !== "npc" ? (game.users.get(participant.controllerUserId)?.character?.img || game.users.get(participant.controllerUserId)?.avatar) : participant.portrait,
+          initial: participant.name.slice(0,1),
+          offline: !game.users.get(participant.controllerUserId)?.active,
           status: participant.folded
             ? `Пас · в банке: ${participant.foldLoss}`
             : table.phase === "betting"
               ? participant.id === table.bettingActiveParticipantId
                 ? "Принимает решение"
                 : table.bettingResponses.includes(participant.id) ? "Ставка принята" : "Ожидает ответа"
-              : participant.completed ? "Готов" : participant.id === table.activeParticipantId ? "Ходит" : "Ожидает",
+              : table.simultaneous ? (pending.some(p => p.id === participant.id) ? "Бросает / выбирает" : "Готов") : participant.completed ? "Готов" : participant.id === table.activeParticipantId ? "Ходит" : "Ожидает",
           diceText: participant.dice?.join(" · ") ?? "",
+          revealedDice: participant.dice?.map(value => ({ value, face: String.fromCodePoint(0x267f + value), emphasized: table.winnerIds.includes(participant.id) && (['straight','fullHouse','fiveKind'].includes(participant.hand?.id) || (participant.hand?.id === 'highCard' ? value === participant.hand.tiebreak[0] : participant.dice.filter(d => d === value).length > 1)) })) ?? [],
           handName: participant.hand?.name ?? "",
           privateDiceText: privateHands[participant.id]?.dice?.every(Number.isInteger) ? privateHands[participant.id].dice.join(" · ") : "",
           privateHandName: privateHands[participant.id]?.dice?.every(Number.isInteger) ? analyzeHand(privateHands[participant.id].dice).name : "",
@@ -597,8 +746,9 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
       heldCount: heldDice.length,
       freeCount: freeDice.length,
       showDiceZones: Boolean(controlsActive && myPrivate?.dice?.every(Number.isInteger)),
-      canRoll: Boolean(controlsActive && !myPrivate?.awaitingChoice),
-      canChoose: Boolean(controlsActive && myPrivate?.awaitingChoice),
+      canRoll: Boolean(controlsActive && !myPrivate?.awaitingChoice && freeDice.length),
+      canChoose: Boolean(controlsActive && (myPrivate?.awaitingChoice || (table.simultaneous && heldDice.length === 5))),
+      finalChoice: Boolean(controlsActive && myPrivate?.awaitingChoice && active.rollCount >= 3),
       canFold: Boolean(controlsActive && (active?.rollCount ?? 0) < 3),
       canBet: controlsBetting,
       callLabel: amountToCall > 0 ? `Уравнять +${formatMoney(amountToCall, table?.currency)}` : "Чек — без повышения",
@@ -611,7 +761,7 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const npcNames = this.element.querySelector('textarea[name="npcs"]')?.value.split(/\r?\n/) ?? [];
     const bet = this.element.querySelector('input[name="bet"]')?.value ?? "";
     const pool = this.element.querySelector('input[name="pool"]')?.value ?? "";
-    request("create", { userIds, npcNames, bet, pool });
+    request("create", { userIds, npcNames, bet, pool, npcActorUuids: (this.npcActors ?? []).map(actor => actor.actorUuid) });
   }
 
   static onRoll(event, target) {
@@ -619,6 +769,7 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static onToggleDie(event, target) {
+    this.movedDie = Number(target.dataset.index);
     request("toggle", { index: target.dataset.index }, target.dataset.participantId);
   }
 
@@ -700,20 +851,26 @@ class TavernGamesHubApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _prepareContext() {
-    const selected = TAVERN_GAMES.find((gameEntry) => gameEntry.id === this.selectedGameId) ?? null;
+    const readyCount = TAVERN_GAMES.filter(entry => entry.available).length;
     return {
-      selected,
-      games: TAVERN_GAMES.map((gameEntry, index) => ({
+      readyCount,
+      totalCount: TAVERN_GAMES.length,
+      plannedCount: TAVERN_GAMES.length - readyCount,
+      progress: TAVERN_GAMES.length ? readyCount / TAVERN_GAMES.length * 100 : 0,
+      progressSlots: TAVERN_GAMES.map((entry,index)=>({ready:index<readyCount})),
+      games: [...TAVERN_GAMES].sort((a, b) => Number(b.available) - Number(a.available)).map((gameEntry, index) => ({
         ...gameEntry,
-        number: index + 1,
-        stateLabel: gameEntry.available ? "Можно играть" : "Правила добавлены"
+        brief: {"poker-dice":"Соберите комбинацию из 5 костей за 3 круга. Оставляйте нужные, остальные перебрасывайте. Между кругами — ставки; сильнейшая рука забирает банк.","goblin-darts":"Бросайте d20 и d6: сектор и множитель определяют очки. Яблочко — 50. Кто первым наберёт цель, забирает банк.","baldur-dice":"Начните с 2d6. Добавляйте по кости или остановитесь: нужна сумма ближе к 21. Перебор проигрывает; при ничьей банк делится."}[gameEntry.id] ?? "",
+        number: String(index + 1).padStart(2,"0")
       }))
     };
   }
 
   static onSelectGame(event, target) {
-    this.selectedGameId = target.dataset.gameId;
-    this.render({ force: true });
+    const entry = TAVERN_GAMES.find(item => item.id === target.dataset.gameId);
+    if (!entry?.available) return;
+    if (entry.id === "poker-dice") DiceParlorApp.open();
+    else QuickGamesApp.open(entry.id);
   }
 
   static onBack() {
@@ -729,6 +886,7 @@ class TavernGamesHubApp extends HandlebarsApplicationMixin(ApplicationV2) {
 }
 
 Hooks.once("ready", () => {
+  if (isHost()) hostTable = loadRecovery("poker");
   game.socket.on(SOCKET, onSocket);
   const module = game.modules.get(MODULE_ID);
   module.api = {

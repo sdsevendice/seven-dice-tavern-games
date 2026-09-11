@@ -1,4 +1,7 @@
 import { findBaldurWinners, scoreGoblinDart } from "./quick-engine.mjs";
+import { saveRecovery, loadRecovery } from "./recovery.mjs";
+import { bindNpcDrop, resolveNpcActors } from "./npc-drop.mjs";
+import { BOARD_GEOMETRY } from "./dartboard-art.mjs";
 
 const MODULE_ID = "seven-dice-tavern-games";
 const MODULE_PATH = `modules/${MODULE_ID}`;
@@ -9,6 +12,8 @@ const DARTBOARD_SETTING = "dartboardStyle";
 let hostState = null;
 let publicState = null;
 let hostQueue = Promise.resolve();
+let requestPending = false;
+let lastAnimatedDart = null;
 
 function activeHost() {
   return game.users.filter((user) => user.active && user.isGM).sort((a, b) => a.id.localeCompare(b.id))[0] ?? null;
@@ -20,7 +25,7 @@ function isHost() {
 
 function parseMoney(value) {
   const match = String(value ?? "").trim().match(/^(\d+(?:[.,]\d+)?)\s*(.*)$/);
-  if (!match) return { amount: 0, currency: "зм" };
+  if (!match || !Number.isFinite(Number(match[1].replace(",", ".")))) throw new Error("Укажите корректную ставку, например 1 зм.");
   return { amount: Number(match[1].replace(",", ".")), currency: match[2].trim() || "зм" };
 }
 
@@ -31,7 +36,10 @@ function formatMoney(amount, currency) {
 
 async function openRoll(formula, userId = game.user.id) {
   const evaluated = await new Roll(formula).evaluate();
-  if (game.dice3d?.showForRoll) await game.dice3d.showForRoll(evaluated, game.users.get(userId) ?? game.user, true);
+  if (game.dice3d?.showForRoll) {
+    try { await game.dice3d.showForRoll(evaluated, game.users.get(userId) ?? game.user, true); }
+    catch (error) { console.warn(`${MODULE_ID} | Бросок сохранён, 3D-анимация недоступна`, error); }
+  }
   return evaluated;
 }
 
@@ -63,6 +71,7 @@ function playSynthWhoosh() {
 }
 
 function playFx(kind) {
+  if (game.settings.get(MODULE_ID, "quietEffects")) return;
   if (kind === "dart-whoosh") playSynthWhoosh();
   if (kind === "dart-impact") foundry.audio.AudioHelper.play({ src: `${MODULE_PATH}/assets/dart-impact.mp3`, volume: 0.75 }, false);
 }
@@ -78,16 +87,20 @@ function wait(milliseconds) {
 
 function makeDartVisual(lastDart, boardStyle = "classic") {
   if (!lastDart) return null;
-  const angle = (lastDart.sector - 1) * 18 - 90;
-  // Both images have decorative rims of different widths, so each visual skin
-  // gets its own calibrated scoring radii.
-  const radii = boardStyle === "rustic"
-    ? { outer: 35, inner: 20, triple: 28 }
-    : { outer: 37, inner: 22, triple: 31.3 };
+  const angle = (lastDart.sector - 1) * (360 / BOARD_GEOMETRY.sectors) - 90;
+  const radii = { outer: BOARD_GEOMETRY.impactOuter, inner: BOARD_GEOMETRY.impactInner, triple: BOARD_GEOMETRY.impactTriple };
   const radius = lastDart.hit === 6 ? 0 : lastDart.hit <= 2 ? radii.outer : lastDart.hit <= 4 ? radii.inner : radii.triple;
   const radians = angle * Math.PI / 180;
+  const point = (r, degrees) => `${50 + r * Math.cos(degrees * Math.PI / 180)},${50 + r * Math.sin(degrees * Math.PI / 180)}`;
+  const halfSector = 180 / BOARD_GEOMETRY.sectors;
+  const start = angle - halfSector + 1.5, end = angle + halfSector - 1.5;
+  const halfWidth = lastDart.hit === 5 ? 1.1 : 3;
+  const outer = radius + halfWidth, inner = radius - halfWidth;
+  const highlight = lastDart.hit === 6 ? null : `M${point(inner, start)} L${point(outer, start)} A${outer},${outer} 0 0 1 ${point(outer, end)} L${point(inner, end)} A${inner},${inner} 0 0 0 ${point(inner, start)} Z`;
   return {
     ...lastDart,
+    highlight,
+    equation: lastDart.hit === 6 ? "Яблочко = 50" : `${lastDart.sector} × ${lastDart.multiplier} = ${lastDart.points}`,
     markerStyle: `--dart-x:${50 + radius * Math.cos(radians)}%;--dart-y:${50 + radius * Math.sin(radians)}%;--dart-angle:${angle}deg`
   };
 }
@@ -97,6 +110,7 @@ function refresh() {
 }
 
 function acceptState(state) {
+  requestPending = false;
   publicState = state;
   refresh();
 }
@@ -113,6 +127,7 @@ function sendStateTo(userId) {
 
 function broadcast() {
   if (!isHost()) return;
+  saveRecovery("quick", hostState);
   for (const user of game.users.filter((entry) => entry.active)) sendStateTo(user.id);
 }
 
@@ -120,7 +135,7 @@ function notify(message) {
   ui.notifications.warn(`Игры Seven Dice: ${message}`);
 }
 
-function advanceTurn(currentId) {
+async function advanceTurn(currentId) {
   const participants = hostState.participants;
   const start = participants.findIndex((participant) => participant.id === currentId);
   for (let offset = 1; offset <= participants.length; offset += 1) {
@@ -130,7 +145,7 @@ function advanceTurn(currentId) {
       return;
     }
   }
-  finishBaldur();
+  await finishBaldur();
 }
 
 function controllerParticipant(packet) {
@@ -147,7 +162,7 @@ async function finishDarts(winner) {
   hostState.activeParticipantId = null;
   hostState.winnerIds = [winner.id];
   hostState.resultText = `${winner.name} первым набирает ${winner.score} очков и получает банк ${hostState.pool}.`;
-  await postResult();
+  await postResult().catch(error => console.warn(`${MODULE_ID} | Итог сохранён, чат недоступен`, error));
 }
 
 async function finishBaldur() {
@@ -161,7 +176,7 @@ async function finishBaldur() {
     : winners.length > 1
       ? `Ничья на ${best}: ${winners.map((participant) => participant.name).join(", ")}. Банк делится.`
       : `${winners[0].name} побеждает с суммой ${best} и получает банк ${hostState.pool}.`;
-  await postResult();
+  await postResult().catch(error => console.warn(`${MODULE_ID} | Итог сохранён, чат недоступен`, error));
 }
 
 async function postResult() {
@@ -180,6 +195,21 @@ async function handleRequest(packet) {
       sendStateTo(packet.senderId);
       return;
     }
+    if (packet.revision !== undefined && (packet.tableId !== (hostState?.id ?? null) || packet.revision !== (hostState?.revision ?? 0))) throw new Error("Стол уже изменился. Дождитесь обновления и повторите действие.");
+    if (packet.action === "reclaim") {
+      if (!game.users.get(packet.senderId)?.isGM) throw new Error("Управление может принять только мастер.");
+      const absent = hostState?.participants.find(p => p.id === packet.participantId);
+      if (!absent || game.users.get(absent.controllerUserId)?.active) throw new Error("Участник ещё подключён.");
+      absent.controllerUserId = packet.senderId;
+      hostState.revision += 1;
+      broadcast();
+      return;
+    }
+    if (packet.action === "replay") {
+      if (hostState?.phase !== "finished") throw new Error("Сначала завершите партию.");
+      packet.data = hostState.setup;
+      packet.action = "create";
+    }
     if (packet.action === "reset") {
       if (!game.users.get(packet.senderId)?.isGM) throw new Error("Закрыть стол может только мастер.");
       hostState = null;
@@ -188,23 +218,32 @@ async function handleRequest(packet) {
     }
     if (packet.action === "create") {
       if (!game.users.get(packet.senderId)?.isGM) throw new Error("Создать стол может только мастер.");
+      if (hostState && hostState.phase !== "finished") throw new Error("Уже идёт партия. Вернитесь к текущему столу или закройте его.");
+      if (!["goblin-darts", "baldur-dice"].includes(packet.data.gameId)) throw new Error("Эта игра ещё не подключена.");
       const users = [...new Set(packet.data.userIds ?? [])].map((id) => game.users.get(id)).filter((user) => user?.active);
       const npcNames = (packet.data.npcNames ?? []).map((name) => String(name).trim()).filter(Boolean);
+      const npcActors = await resolveNpcActors(packet.data.npcActorUuids ?? []);
+      if (users.length + npcNames.length + npcActors.length > MAX_PLAYERS) throw new Error("За столом может быть не больше 6 участников.");
       const entries = [
         ...users.map((user) => ({ name: user.name, kind: "player", controllerUserId: user.id })),
-        ...npcNames.map((name) => ({ name, kind: "npc", controllerUserId: packet.senderId }))
+        ...npcNames.map((name) => ({ name, kind: "npc", controllerUserId: packet.senderId })),
+        ...npcActors.map(actor => ({...actor, kind: "npc", controllerUserId: packet.senderId}))
       ].slice(0, MAX_PLAYERS);
       const minimum = packet.data.gameId === "goblin-darts" || packet.data.gameId === "baldur-dice" ? 2 : 2;
       if (entries.length < minimum) throw new Error(`Нужно минимум ${minimum} участника.`);
       const money = parseMoney(packet.data.stake);
+      const target = Number(packet.data.target ?? 301);
+      if (!Number.isSafeInteger(target) || target < 20) throw new Error("Цель — целое число от 20.");
       hostState = {
         id: foundry.utils.randomID(12),
+        revision: 0,
+        setup: foundry.utils.deepClone(packet.data),
         gameId: packet.data.gameId,
         title: packet.data.gameId === "goblin-darts" ? "Гоблинский дротик" : "Кости Балдура",
         phase: "playing",
         stake: formatMoney(money.amount, money.currency),
         pool: formatMoney(money.amount * entries.length, money.currency),
-        target: Math.max(20, Number(packet.data.target) || 301),
+        target,
         activeParticipantId: null,
         winnerIds: [],
         resultText: "",
@@ -232,14 +271,11 @@ async function handleRequest(packet) {
       const sector = evaluated.dice[0].results[0].result;
       const hit = evaluated.dice[1].results[0].result;
       const { multiplier, points, label } = scoreGoblinDart(sector, hit);
-      broadcastFx("dart-whoosh");
-      await wait(420);
       participant.score += points;
       participant.lastRoll = { sector, hit, multiplier, points, label };
-      hostState.lastDart = { participantId: participant.id, participantName: participant.name, sector, hit, multiplier, points, label };
-      broadcastFx("dart-impact");
+      hostState.lastDart = { id: foundry.utils.randomID(12), participantId: participant.id, participantName: participant.name, sector, hit, multiplier, points, label };
       if (participant.score >= hostState.target) await finishDarts(participant);
-      else advanceTurn(participant.id);
+      else await advanceTurn(participant.id);
     }
     else if (hostState.gameId === "baldur-dice" && packet.action === "baldurRoll") {
       if (participant.started) throw new Error("Начальный бросок уже сделан.");
@@ -255,22 +291,24 @@ async function handleRequest(packet) {
       if (participant.total > 21) {
         participant.bust = true;
         participant.done = true;
-        advanceTurn(participant.id);
+        await advanceTurn(participant.id);
       }
       else if (participant.total === 21) {
         participant.done = true;
-        advanceTurn(participant.id);
+        await advanceTurn(participant.id);
       }
     }
     else if (hostState.gameId === "baldur-dice" && packet.action === "baldurStand") {
       if (!participant.started) throw new Error("Сначала бросьте начальные 2d6.");
       participant.done = true;
-      advanceTurn(participant.id);
+      await advanceTurn(participant.id);
     }
     else throw new Error("Действие недоступно для этой игры.");
+    hostState.revision += 1;
     broadcast();
   }
   catch (error) {
+    requestPending = false;
     console.warn(`${MODULE_ID} | Quick game request rejected`, error);
     if (packet.senderId === game.user.id) notify(error.message);
     else game.socket.emit(SOCKET, { type: "qg-error", targetUserId: packet.senderId, message: error.message });
@@ -282,10 +320,12 @@ function enqueue(packet) {
 }
 
 function request(action, data = {}, participantId = null) {
-  const packet = { type: "qg-request", action, data, participantId, senderId: game.user.id };
+  if (action !== "sync" && requestPending) return;
+  if (action !== "sync") requestPending = true;
+  const packet = { type: "qg-request", action, data, participantId, senderId: game.user.id, tableId: publicState?.id ?? null, revision: publicState?.revision ?? 0 };
   if (isHost()) enqueue(packet);
   else if (activeHost()) game.socket.emit(SOCKET, packet);
-  else notify("Нет активного мастера.");
+  else { requestPending = false; notify("Нет активного мастера."); }
 }
 
 function onSocket(packet) {
@@ -296,7 +336,7 @@ function onSocket(packet) {
   }
   if (packet?.targetUserId && packet.targetUserId !== game.user.id) return;
   if (packet?.type === "qg-state") acceptState(packet.state);
-  else if (packet?.type === "qg-error") notify(packet.message);
+  else if (packet?.type === "qg-error") { requestPending = false; notify(packet.message); }
 }
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -304,6 +344,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 export class QuickGamesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static instance = null;
   selectedGameId = "goblin-darts";
+  rulesExpanded = false;
 
   static DEFAULT_OPTIONS = {
     id: "seven-dice-quick-game",
@@ -314,6 +355,10 @@ export class QuickGamesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       create: QuickGamesApp.onCreate,
       reset: QuickGamesApp.onReset,
+      replay: () => request("replay"),
+      sync: () => request("sync"),
+      returnTable: function () { this.selectedGameId = publicState.gameId; this.render({ force: true }); },
+      reclaim: (event, target) => request("reclaim", {}, target.dataset.participantId),
       boardStyle: QuickGamesApp.onBoardStyle,
       dartsRoll: QuickGamesApp.onDartsRoll,
       baldurRoll: QuickGamesApp.onBaldurRoll,
@@ -334,19 +379,21 @@ export class QuickGamesApp extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext() {
     const state = publicState?.gameId === this.selectedGameId ? publicState : null;
     const active = state?.participants.find((participant) => participant.id === state.activeParticipantId) ?? null;
-    const activeView = active ? { ...active, diceText: active.dice.length ? active.dice.join(" + ") : "—" } : null;
+    const activeView = active ? { ...active, remaining: Math.max(0, 21 - active.total), diceFaces: active.dice.map((value, index) => ({ value, face: String.fromCodePoint(0x267f + value), newest: index === active.dice.length - 1 })), diceText: active.dice.length ? active.dice.join(" + ") : "—" } : null;
     const controls = active?.controllerUserId === game.user.id;
     const isDarts = this.selectedGameId === "goblin-darts";
     const dartboardStyle = game.settings.get(MODULE_ID, DARTBOARD_SETTING);
     return {
       hasTable: Boolean(state),
+      otherTable: !state && publicState?.phase === "playing" ? publicState.title : null,
+      rulesExpanded: this.rulesExpanded,
       isGM: game.user.isGM,
       isDarts,
       isBaldur: !isDarts,
       title: isDarts ? "Гоблинский дротик" : "Кости Балдура",
       subtitle: isDarts ? "Первым наберите установленную цель" : "Приблизьтесь к 21, не превышая его",
       activeUsers: game.users.filter((user) => user.active).map((user) => ({ id: user.id, name: user.name })),
-      targetSectors: Array.from({ length: 20 }, (_, index) => ({ number: index + 1, style: `--sector:${index}` })),
+      targetSectors: Array.from({ length: 20 }, (_, index) => { const angle = (index * 18 - 90) * Math.PI / 180; return { number: index + 1, style: `left:${50 + 43 * Math.cos(angle)}%;top:${50 + 43 * Math.sin(angle)}%` }; }),
       dartboardStyle,
       dartboardStyles: [
         { id: "classic", label: "Классическая", active: dartboardStyle === "classic" },
@@ -360,8 +407,13 @@ export class QuickGamesApp extends HandlebarsApplicationMixin(ApplicationV2) {
           ...participant,
           active: participant.id === state.activeParticipantId,
           winner: state.winnerIds.includes(participant.id),
+          portrait: participant.kind !== "npc" ? (game.users.get(participant.controllerUserId)?.character?.img || game.users.get(participant.controllerUserId)?.avatar) : participant.portrait,
+          initial: participant.name.slice(0,1),
+          offline: !game.users.get(participant.controllerUserId)?.active,
+          progress: Math.min(100, participant.score / state.target * 100),
+          remaining: Math.max(0, state.target - participant.score),
           diceText: participant.dice.length ? participant.dice.join(" + ") : "—",
-          status: participant.bust ? "Перебор" : participant.done ? "Остановился" : participant.id === state.activeParticipantId ? "Ходит" : "Ожидает",
+          status: participant.bust ? "Перебор" : state.phase === "finished" ? (state.winnerIds.includes(participant.id) ? "Победитель" : "Партия завершена") : participant.done ? "Остановился" : participant.id === state.activeParticipantId ? "Ходит" : "Ожидает",
           lastText: participant.lastRoll ? `d20: ${participant.lastRoll.sector}, d6: ${participant.lastRoll.hit}, +${participant.lastRoll.points}` : "Бросков ещё нет"
         }))
       } : null,
@@ -372,12 +424,27 @@ export class QuickGamesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  _onRender(context, options) {
+    super._onRender(context, options);
+    bindNpcDrop(this);
+    this.element.querySelector(".sdq-darts-rule")?.addEventListener("toggle", event => { this.rulesExpanded = event.target.open; });
+    const dart = publicState?.lastDart;
+    const marker = this.element.querySelector(".sdq-dart-marker");
+    if (marker && dart?.id && dart.id !== lastAnimatedDart) {
+      lastAnimatedDart = dart.id;
+      playFx("dart-whoosh");
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!reduced) marker.classList.add("is-flying");
+      setTimeout(() => playFx("dart-impact"), reduced ? 0 : 420);
+    }
+  }
+
   static onCreate() {
     const userIds = [...this.element.querySelectorAll('input[name="player"]:checked')].map((input) => input.value);
     const npcNames = this.element.querySelector('textarea[name="npcs"]')?.value.split(/\r?\n/) ?? [];
     const stake = this.element.querySelector('input[name="stake"]')?.value ?? "";
     const target = this.element.querySelector('input[name="target"]')?.value ?? "301";
-    request("create", { gameId: this.selectedGameId, userIds, npcNames, stake, target });
+    request("create", { gameId: this.selectedGameId, userIds, npcNames, stake, target, npcActorUuids: (this.npcActors ?? []).map(actor => actor.actorUuid) });
   }
 
   static onDartsRoll(event, target) { request("dartsRoll", {}, target.dataset.participantId); }
@@ -393,6 +460,7 @@ export class QuickGamesApp extends HandlebarsApplicationMixin(ApplicationV2) {
 }
 
 Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, "quietEffects", { name: "Отключить звуковые эффекты игр", scope: "client", config: true, type: Boolean, default: false });
   game.settings.register(MODULE_ID, DARTBOARD_SETTING, {
     name: "Вид мишени для «Гоблинского дротика»",
     scope: "client",
@@ -405,6 +473,8 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", () => {
+  if (isHost()) hostState = loadRecovery("quick");
   game.socket.on(SOCKET, onSocket);
   request("sync");
 });
+Hooks.on("userConnected", () => { if (isHost()) broadcast(); else refresh(); });

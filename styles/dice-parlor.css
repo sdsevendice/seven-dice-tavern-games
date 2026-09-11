@@ -1,4 +1,5 @@
 #seven-dice-poker {
+  container-type: inline-size;
   --dp-gold: #d5a84d;
   --dp-gold-light: #f3d58e;
   --dp-red: #8d292a;
@@ -9,113 +10,178 @@
   box-shadow: 0 24px 80px #000d;
 }
 
+.seven-dice-poker .dp-betting-hand { padding: 14px 22px; margin: 10px auto; border: 1px solid #658d69; border-radius: 12px; background: #211a14d9; max-width: 100%; }
+.seven-dice-poker .dp-revealed-faces { display:flex;gap:4px;font-size:32px; }
+.seven-dice-poker .dp-revealed-faces .emphasized { color:#ffdb77;text-shadow:0 0 9px #e8b04b88; }
+.seven-dice-poker .dp-static-die { display: inline-flex; flex-direction: column; font-size: 56px; line-height: 1; color: #f7e9c9; }
+.seven-dice-poker .dp-static-die small { font: 12px system-ui; color: #dbc8a8; }
+.seven-dice-poker .dp-contribution { padding: 10px; color: #f4dfad; border: 1px solid #705b38; border-radius: 6px; }
+.seven-dice-poker .dp-participant-main span { font-size: 12px; }
+.seven-dice-poker button:focus-visible { outline: 2px solid #ffe298; outline-offset: 3px; }
+@container (max-width: 650px) { .seven-dice-poker .dp-participants { grid-template-columns: 1fr; } .seven-dice-poker .dp-bet-controls { flex-wrap: wrap; } .seven-dice-poker .dp-rules { grid-template-columns: 1fr; } }
+
 #seven-dice-poker .window-header { background: #171210; border-bottom: 1px solid #614b2f; }
 #seven-dice-poker .window-content { padding: 0; overflow: hidden; background: radial-gradient(circle at 50% 20%, #5b301f55, transparent 40%), linear-gradient(145deg, #231713, #100d0c 70%); }
-.dice-parlor .dp-shell { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-.dice-parlor button { font-family: inherit; }
-.dice-parlor .dp-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: linear-gradient(90deg, #201512ee, #110e0d); border-bottom: 1px solid #61482d; }
-.dice-parlor .dp-kicker { color: var(--dp-gold); font-size: 10px; font-weight: 900; letter-spacing: .3em; }
-.dice-parlor h1, .dice-parlor h2 { margin: 2px 0; color: #fff5dc; font-family: Georgia, serif; }
-.dice-parlor h1 { font-size: 28px; }
-.dice-parlor h2 { font-size: 19px; }
-.dice-parlor .dp-rules-button, .dice-parlor .dp-danger, .dice-parlor .dp-primary { width: auto; min-height: 36px; padding: 0 14px; border-radius: 6px; }
-.dice-parlor .dp-rules-button { color: #e8dac0; background: #2a211d; border: 1px solid #66523c; }
-.dice-parlor .dp-rules { display: grid; flex-shrink: 0; max-height: 55%; overflow-y: auto; grid-template-columns: 1fr 1fr; gap: 28px; padding: 16px 24px; color: #d8ccb7; background: #191310f5; border-bottom: 1px solid #6c5232; font-size: 12px; }
-.dice-parlor .dp-rules p { margin: 6px 0; line-height: 1.45; }
-.dice-parlor .dp-ranking-direction { color: var(--dp-gold-light); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.dice-parlor .dp-hand-examples { max-height: 238px; display: grid; grid-template-columns: 1fr; gap: 4px; margin: 8px 0; overflow-y: auto; padding-right: 4px; scrollbar-color: #7b5c35 #17110f; }
-.dice-parlor .dp-hand-examples > div { display: grid; grid-template-columns: minmax(110px, 1fr) auto; align-items: center; padding: 5px 7px; background: #ffffff08; border: 1px solid #493827; border-radius: 5px; }
-.dice-parlor .dp-hand-examples strong { color: #f1e4ca; font-size: 10px; }
-.dice-parlor .dp-hand-examples .dp-faces { color: var(--dp-gold-light); font-family: "Segoe UI Symbol", serif; font-size: 17px; letter-spacing: 1px; }
-.dice-parlor .dp-hand-examples small { grid-column: 1 / -1; color: #9f907a; font-size: 9px; }
-.dice-parlor .dp-setup { display: grid; flex: 1; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding: 24px; overflow: auto; }
-.dice-parlor .dp-setup section { position: relative; padding: 22px 18px; background: #1f1815dd; border: 1px solid #57432e; border-radius: 9px; }
-.dice-parlor .dp-step { position: absolute; top: 14px; right: 14px; display: grid; width: 28px; height: 28px; place-items: center; color: #1b1209; background: var(--dp-gold); border-radius: 50%; font-weight: 900; }
-.dice-parlor .dp-user-list { display: flex; flex-direction: column; gap: 7px; margin-top: 16px; }
-.dice-parlor .dp-user-list label { padding: 8px; background: #ffffff08; border-radius: 5px; }
-.dice-parlor textarea, .dice-parlor input[type="text"] { width: 100%; margin: 14px 0 8px; color: #f4ead6; background: #0e0b0a; border: 1px solid #5c4934; }
-.dice-parlor textarea { resize: vertical; }
-.dice-parlor .dp-hint { color: #a99a85; font-size: 11px; }
-.dice-parlor .dp-field-label { display: block; margin-top: 12px; color: #cbb996; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
-.dice-parlor .dp-primary { color: #1b1208; background: linear-gradient(#e1bb65, #bd8733); border: 1px solid #f1d490; font-weight: 800; }
-.dice-parlor .dp-primary:hover { background: linear-gradient(#f2d58c, #d39b42); }
-.dice-parlor .dp-danger { color: #e9c8c3; background: #5b2323; border: 1px solid #914342; }
-.dice-parlor .dp-waiting { display: grid; flex: 1; place-content: center; text-align: center; color: #bbaa90; }
-.dice-parlor .dp-waiting > i { color: var(--dp-gold); font-size: 40px; }
-.dice-parlor .dp-game { min-height: 0; display: flex; flex: 1; flex-direction: column; overflow: auto; }
-.dice-parlor .dp-table-info { display: flex; align-items: center; gap: 28px; padding: 10px 20px; background: #0e0c0bd9; border-bottom: 1px solid #3f3327; }
-.dice-parlor .dp-table-info div { display: flex; flex-direction: column; }
-.dice-parlor .dp-table-info span { color: #9d8b72; font-size: 9px; letter-spacing: .17em; }
-.dice-parlor .dp-table-info strong { color: #f4e8cd; }
-.dice-parlor .dp-table-info .dp-pool strong { color: var(--dp-gold-light); font-size: 16px; }
-.dice-parlor .dp-table-info .dp-danger { margin-left: auto; }
-.dice-parlor .dp-participants { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 7px; padding: 12px 16px; }
-.dice-parlor .dp-participant { display: flex; align-items: center; gap: 9px; min-height: 52px; padding: 7px 9px; background: #191412cc; border: 1px solid #46382b; border-radius: 7px; }
-.dice-parlor .dp-participant.active { border-color: var(--dp-gold); box-shadow: 0 0 14px #d5a84d26; }
-.dice-parlor .dp-participant.winner { background: #3d3015; border-color: #f0c65f; }
-.dice-parlor .dp-participant.folded { opacity: .55; }
-.dice-parlor .dp-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; color: var(--dp-gold); background: #0c0a09; border-radius: 50%; }
-.dice-parlor .dp-participant-main { min-width: 0; display: flex; flex: 1; flex-direction: column; }
-.dice-parlor .dp-participant-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dice-parlor .dp-participant-main span, .dice-parlor .dp-held { color: #9f917e; font-size: 10px; }
-.dice-parlor .dp-held { white-space: nowrap; }
-.dice-parlor .dp-reveal { display: flex; flex-direction: column; text-align: right; }
-.dice-parlor .dp-reveal span { color: var(--dp-gold-light); font-weight: 800; }
-.dice-parlor .dp-reveal strong { font-size: 10px; }
-.dice-parlor .dp-private-mini { display: flex; flex-direction: column; text-align: right; }
-.dice-parlor .dp-private-mini span { color: var(--dp-gold-light); font-size: 11px; font-weight: 800; }
-.dice-parlor .dp-private-mini strong { color: #a99a85; font-size: 8px; }
-.dice-parlor .dp-board { flex-shrink: 0; min-height: 310px; display: flex; flex: 1 0 auto; flex-direction: column; align-items: center; justify-content: center; padding: 18px; background: radial-gradient(ellipse at center, #63332344, transparent 60%); }
-.dice-parlor .dp-turn-label { color: var(--dp-gold); font-size: 9px; font-weight: 900; letter-spacing: .22em; }
-.dice-parlor .dp-board > h2 { margin: 4px 0 14px; font-size: 25px; }
-.dice-parlor .dp-hidden-hand { display: flex; align-items: center; gap: 8px; color: #9e907b; }
-.dice-parlor .dp-hidden-hand p { margin: 0; }
-.dice-parlor .dp-dice-row { display: flex; justify-content: center; gap: 13px; margin: 18px 0 12px; }
-.dice-parlor .dp-die { width: 88px; height: 88px; display: grid; place-content: center; margin: 0; color: #21130d; background: linear-gradient(145deg, #fff3d5, #cdbb98); border: 3px solid #7e6745; border-radius: 14px; box-shadow: 0 8px 14px #0008, inset 0 0 0 2px #fff8; }
-.dice-parlor .dp-die:not(:disabled):hover { transform: translateY(-4px); border-color: var(--dp-gold-light); }
-.dice-parlor .dp-die.held { color: #fff4df; background: linear-gradient(145deg, #416c50, #244431); border-color: #a4d3a3; box-shadow: 0 0 16px #74ba8555; }
-.dice-parlor .dp-die span { font-family: Georgia, serif; font-size: 36px; font-weight: 900; }
-.dice-parlor .dp-die small { color: #f0cb86; font-size: 7px; font-weight: 900; letter-spacing: .08em; }
-.dice-parlor .dp-die:disabled { opacity: 1; cursor: default; }
-.dice-parlor .dp-combination { color: #bbaa91; }
-.dice-parlor .dp-combination strong { color: var(--dp-gold-light); }
-.dice-parlor .dp-actions { display: flex; gap: 9px; margin-top: 15px; }
-.dice-parlor .dp-observer { color: #92846f; }
-.dice-parlor .dp-result { display: grid; flex: 1; place-content: center; text-align: center; }
-.dice-parlor .dp-result > i { color: var(--dp-gold); font-size: 54px; filter: drop-shadow(0 0 18px #d5a84d77); }
-.dice-parlor .dp-result p { color: #a99a85; }
-.dice-parlor .dp-betting-board { min-height: 310px; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 22px; text-align: center; background: radial-gradient(ellipse at center, #80602033, transparent 62%); }
-.dice-parlor .dp-betting-icon { margin: 10px 0 2px; color: var(--dp-gold); font-size: 42px; filter: drop-shadow(0 0 16px #d5a84d66); }
-.dice-parlor .dp-betting-board > p { margin: 5px 0; color: #b7a890; }
-.dice-parlor .dp-betting-board > p strong { color: var(--dp-gold-light); }
-.dice-parlor .dp-bet-controls { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 15px; }
-.dice-parlor .dp-raise-control { display: flex; align-items: center; gap: 5px; padding: 5px; background: #0d0b0a99; border: 1px solid #4d3d2d; border-radius: 7px; }
-.dice-parlor .dp-raise-control input { width: 175px; margin: 0; }
-.dice-parlor .dp-bet-hint { max-width: 560px; font-size: 10px; }
-.dice-parlor-chat ul { margin: 6px 0; padding-left: 18px; }
+.seven-dice-poker .dp-shell { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.seven-dice-poker .dp-shell button { font-family: inherit; }
+.seven-dice-poker .dp-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: linear-gradient(90deg, #201512ee, #110e0d); border-bottom: 1px solid #61482d; }
+.seven-dice-poker .dp-kicker { color: var(--dp-gold); font-size: 10px; font-weight: 900; letter-spacing: .3em; }
+.seven-dice-poker h1, .seven-dice-poker h2 { margin: 2px 0; color: #fff5dc; font-family: Georgia, serif; }
+.seven-dice-poker h1 { font-size: 28px; }
+.seven-dice-poker h2 { font-size: 19px; }
+.seven-dice-poker .dp-rules-button, .seven-dice-poker .dp-danger, .seven-dice-poker .dp-primary { width: auto; min-height: 36px; padding: 0 14px; border-radius: 6px; }
+.seven-dice-poker .dp-rules-button { color: #e8dac0; background: #2a211d; border: 1px solid #66523c; }
+.seven-dice-poker .dp-rules { display: grid; flex-shrink: 0; max-height: 55%; overflow-y: auto; grid-template-columns: 1fr 1fr; gap: 28px; padding: 16px 24px; color: #d8ccb7; background: #191310f5; border-bottom: 1px solid #6c5232; font-size: 12px; }
+.seven-dice-poker .dp-rules p { margin: 6px 0; line-height: 1.45; }
+.seven-dice-poker .dp-ranking-direction { color: var(--dp-gold-light); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.seven-dice-poker .dp-hand-examples { max-height: 238px; display: grid; grid-template-columns: 1fr; gap: 4px; margin: 8px 0; overflow-y: auto; padding-right: 4px; scrollbar-color: #7b5c35 #17110f; }
+.seven-dice-poker .dp-hand-examples > div { display: grid; grid-template-columns: minmax(110px, 1fr) auto; align-items: center; padding: 5px 7px; background: #ffffff08; border: 1px solid #493827; border-radius: 5px; }
+.seven-dice-poker .dp-hand-examples strong { color: #f1e4ca; font-size: 10px; }
+.seven-dice-poker .dp-hand-examples .dp-faces { color: var(--dp-gold-light); font-family: "Segoe UI Symbol", serif; font-size: 17px; letter-spacing: 1px; }
+.seven-dice-poker .dp-hand-examples small { grid-column: 1 / -1; color: #9f907a; font-size: 9px; }
+.seven-dice-poker .dp-setup { display: grid; flex: 1; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding: 24px; overflow: auto; }
+.seven-dice-poker .dp-setup section { position: relative; padding: 22px 18px; background: #1f1815dd; border: 1px solid #57432e; border-radius: 9px; }
+.seven-dice-poker .dp-step { position: absolute; top: 14px; right: 14px; display: grid; width: 28px; height: 28px; place-items: center; color: #1b1209; background: var(--dp-gold); border-radius: 50%; font-weight: 900; }
+.seven-dice-poker .dp-user-list { display: flex; flex-direction: column; gap: 7px; margin-top: 16px; }
+.seven-dice-poker .dp-user-list label { padding: 8px; background: #ffffff08; border-radius: 5px; }
+.seven-dice-poker textarea, .seven-dice-poker input[type="text"] { width: 100%; margin: 14px 0 8px; color: #f4ead6; background: #0e0b0a; border: 1px solid #5c4934; }
+.seven-dice-poker textarea { resize: vertical; }
+.seven-dice-poker .dp-hint { color: #a99a85; font-size: 11px; }
+.seven-dice-poker .dp-field-label { display: block; margin-top: 12px; color: #cbb996; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.seven-dice-poker .dp-primary { color: #1b1208; background: linear-gradient(#e1bb65, #bd8733); border: 1px solid #f1d490; font-weight: 800; }
+.seven-dice-poker .dp-primary:hover { background: linear-gradient(#f2d58c, #d39b42); }
+.seven-dice-poker .dp-danger { color: #e9c8c3; background: #5b2323; border: 1px solid #914342; }
+.seven-dice-poker .dp-waiting { display: grid; flex: 1; place-content: center; text-align: center; color: #bbaa90; }
+.seven-dice-poker .dp-waiting > i { color: var(--dp-gold); font-size: 40px; }
+.seven-dice-poker .dp-game { min-height: 0; display: flex; flex: 1; flex-direction: column; overflow: auto; }
+.seven-dice-poker .dp-table-info { display: flex; align-items: center; gap: 28px; padding: 10px 20px; background: #0e0c0bd9; border-bottom: 1px solid #3f3327; }
+.seven-dice-poker .dp-table-info div { display: flex; flex-direction: column; }
+.seven-dice-poker .dp-table-info span { color: #9d8b72; font-size: 9px; letter-spacing: .17em; }
+.seven-dice-poker .dp-table-info strong { color: #f4e8cd; }
+.seven-dice-poker .dp-table-info .dp-pool strong { color: var(--dp-gold-light); font-size: 16px; }
+.seven-dice-poker .dp-table-info .dp-danger { margin-left: auto; }
+.seven-dice-poker .dp-participants { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 7px; padding: 12px 16px; }
+.seven-dice-poker .dp-participant { display: flex; align-items: center; gap: 9px; min-height: 52px; padding: 7px 9px; background: #191412cc; border: 1px solid #46382b; border-radius: 7px; }
+.seven-dice-poker .dp-participant.active { border-color: var(--dp-gold); box-shadow: 0 0 14px #d5a84d26; }
+.seven-dice-poker .dp-participant.winner { background: #3d3015; border-color: #f0c65f; }
+.seven-dice-poker .dp-participant.folded { opacity: .55; }
+.seven-dice-poker .dp-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; color: var(--dp-gold); background: #0c0a09; border-radius: 50%; }
+.seven-dice-poker .dp-participant-main { min-width: 0; display: flex; flex: 1; flex-direction: column; }
+.seven-dice-poker .dp-participant-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seven-dice-poker .dp-participant-main span, .seven-dice-poker .dp-held { color: #9f917e; font-size: 10px; }
+.seven-dice-poker .dp-held { white-space: nowrap; }
+.seven-dice-poker .dp-reveal { display: flex; flex-direction: column; text-align: right; }
+.seven-dice-poker .dp-reveal span { color: var(--dp-gold-light); font-weight: 800; }
+.seven-dice-poker .dp-reveal strong { font-size: 10px; }
+.seven-dice-poker .dp-private-mini { display: flex; flex-direction: column; text-align: right; }
+.seven-dice-poker .dp-private-mini span { color: var(--dp-gold-light); font-size: 11px; font-weight: 800; }
+.seven-dice-poker .dp-private-mini strong { color: #a99a85; font-size: 8px; }
+.seven-dice-poker .dp-board { flex-shrink: 0; min-height: 310px; display: flex; flex: 1 0 auto; flex-direction: column; align-items: center; justify-content: center; padding: 18px; background: radial-gradient(ellipse at center, #63332344, transparent 60%); }
+.seven-dice-poker .dp-turn-label { color: var(--dp-gold); font-size: 9px; font-weight: 900; letter-spacing: .22em; }
+.seven-dice-poker .dp-board > h2 { margin: 4px 0 14px; font-size: 25px; }
+.seven-dice-poker .dp-hidden-hand { display: flex; align-items: center; gap: 8px; color: #9e907b; }
+.seven-dice-poker .dp-hidden-hand p { margin: 0; }
+.seven-dice-poker .dp-dice-row { display: flex; justify-content: center; gap: 13px; margin: 18px 0 12px; }
+.seven-dice-poker .dp-die { width: 88px; height: 88px; display: grid; place-content: center; margin: 0; color: #21130d; background: linear-gradient(145deg, #fff3d5, #cdbb98); border: 3px solid #7e6745; border-radius: 14px; box-shadow: 0 8px 14px #0008, inset 0 0 0 2px #fff8; }
+.seven-dice-poker .dp-die:not(:disabled):hover { transform: translateY(-4px); border-color: var(--dp-gold-light); }
+.seven-dice-poker .dp-die.held { color: #fff4df; background: linear-gradient(145deg, #416c50, #244431); border-color: #a4d3a3; box-shadow: 0 0 16px #74ba8555; }
+.seven-dice-poker .dp-die span { font-family: Georgia, serif; font-size: 36px; font-weight: 900; }
+.seven-dice-poker .dp-die small { color: #f0cb86; font-size: 7px; font-weight: 900; letter-spacing: .08em; }
+.seven-dice-poker .dp-die:disabled { opacity: 1; cursor: default; }
+.seven-dice-poker .dp-combination { color: #bbaa91; }
+.seven-dice-poker .dp-combination strong { color: var(--dp-gold-light); }
+.seven-dice-poker .dp-actions { display: flex; gap: 9px; margin-top: 15px; }
+.seven-dice-poker .dp-observer { color: #92846f; }
+.seven-dice-poker .dp-result { display: grid; flex: 1; place-content: center; text-align: center; }
+.seven-dice-poker .dp-result > i { color: var(--dp-gold); font-size: 54px; filter: drop-shadow(0 0 18px #d5a84d77); }
+.seven-dice-poker .dp-result p { color: #a99a85; }
+.seven-dice-poker .dp-betting-board { min-height: 310px; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 22px; text-align: center; background: radial-gradient(ellipse at center, #80602033, transparent 62%); }
+.seven-dice-poker .dp-betting-icon { margin: 10px 0 2px; color: var(--dp-gold); font-size: 42px; filter: drop-shadow(0 0 16px #d5a84d66); }
+.seven-dice-poker .dp-betting-board > p { margin: 5px 0; color: #b7a890; }
+.seven-dice-poker .dp-betting-board > p strong { color: var(--dp-gold-light); }
+.seven-dice-poker .dp-bet-controls { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 15px; }
+.seven-dice-poker .dp-raise-control { display: flex; align-items: center; gap: 5px; padding: 5px; background: #0d0b0a99; border: 1px solid #4d3d2d; border-radius: 7px; }
+.seven-dice-poker .dp-raise-control input { width: 175px; margin: 0; }
+.seven-dice-poker .dp-bet-hint { max-width: 560px; font-size: 10px; }
+.seven-dice-poker-chat ul { margin: 6px 0; padding-left: 18px; }
 
-.dice-parlor .dp-choice-help { text-align: center; max-width: 610px; line-height: 1.5; color: #d4c5a9; margin: 0 0 12px; }
-.dice-parlor .dp-choice-help strong { color: #fff0c4; }
-.dice-parlor .dp-dice-zones { width: min(600px, 100%); display: grid; gap: 10px; }
-.dice-parlor .dp-dice-zone { padding: 10px; border: 1px dashed #8d7958; border-radius: 12px; background: #100c0999; }
-.dice-parlor .dp-held-zone { background: #233d2b99; border: 1px solid #709b76; }
-.dice-parlor .dp-dice-zone h3 { margin: 0; font-size: 13px; color: #dfd0b1; }
-.dice-parlor .dp-held-zone h3 { color: #c7e7c5; }
-.dice-parlor .dp-dice-zone .dp-dice-row { min-height: 78px; flex-wrap: wrap; align-items: center; margin: 8px 0 0; }
-.dice-parlor .dp-dice-zone .dp-die { width: 72px; height: 78px; animation: dp-place-die .18s ease-out; transition: transform .15s, box-shadow .15s; }
-.dice-parlor .dp-die small { color: inherit; white-space: nowrap; }
-.dice-parlor .dp-free-zone .dp-die:not(:disabled):hover { transform: translateY(5px); }
-.dice-parlor .dp-held-zone .dp-die:not(:disabled):hover { transform: translateY(-5px); }
-.dice-parlor .dp-die:focus-visible { outline: 3px solid #fff1b7; outline-offset: 3px; }
-.dice-parlor .dp-zone-empty { margin: 0; text-align: center; color: #b7b19b; font-size: 12px; }
-.dice-parlor .dp-bet-controls, .dice-parlor .dp-actions, .dice-parlor .dp-table-info { flex-wrap: wrap; }
+.seven-dice-poker .dp-choice-help { text-align: center; max-width: 610px; line-height: 1.5; color: #d4c5a9; margin: 0 0 12px; }
+.seven-dice-poker .dp-choice-help strong { color: #fff0c4; }
+.seven-dice-poker .dp-dice-zones { width: min(600px, 100%); display: grid; gap: 10px; }
+.seven-dice-poker .dp-dice-zone { padding: 10px; border: 1px dashed #8d7958; border-radius: 12px; background: #100c0999; }
+.seven-dice-poker .dp-held-zone { background: #233d2b99; border: 1px solid #709b76; }
+.seven-dice-poker .dp-dice-zone h3 { margin: 0; font-size: 13px; color: #dfd0b1; }
+.seven-dice-poker .dp-held-zone h3 { color: #c7e7c5; }
+.seven-dice-poker .dp-dice-zone .dp-dice-row { min-height: 78px; flex-wrap: wrap; align-items: center; margin: 8px 0 0; }
+.seven-dice-poker .dp-dice-zone .dp-die { width: 72px; height: 78px; transition: transform .15s, box-shadow .15s; }
+.seven-dice-poker .dp-dice-zone .dp-die.dp-moved { animation: dp-place-die .18s ease-out; }
+.seven-dice-poker .dp-step-hint { padding:12px 18px;margin:10px 16px;color:#fff1cb;background:#49351f;border-left:3px solid #e9bd62;border-radius:6px;flex-shrink:0;text-align:center; }
+.seven-dice-poker .dp-history { padding:12px 20px;background:#17120ed9;color:#d8c7aa;flex-shrink:0; }
+.seven-dice-poker .dp-history summary { cursor:pointer;color:#efcd86; }
+.seven-dice-poker .dp-history li { margin:5px 0; }
+.seven-dice-poker .dp-betting-hand { text-align:center;flex-shrink:0; }
+.seven-dice-poker .dp-die small { color: inherit; white-space: nowrap; }
+.seven-dice-poker .dp-free-zone .dp-die:not(:disabled):hover { transform: translateY(5px); }
+.seven-dice-poker .dp-held-zone .dp-die:not(:disabled):hover { transform: translateY(-5px); }
+.seven-dice-poker .dp-die:focus-visible { outline: 3px solid #fff1b7; outline-offset: 3px; }
+.seven-dice-poker .dp-zone-empty { margin: 0; text-align: center; color: #b7b19b; font-size: 12px; }
+.seven-dice-poker .dp-bet-controls, .seven-dice-poker .dp-actions, .seven-dice-poker .dp-table-info { flex-wrap: wrap; }
 @keyframes dp-place-die { from { opacity: .6; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .dice-parlor .dp-dice-zone .dp-die { animation: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) { .seven-dice-poker .dp-dice-zone .dp-die { animation: none; transition: none; } }
 
 @media (max-width: 760px) {
-  .dice-parlor .dp-participants { grid-template-columns: 1fr; }
-  .dice-parlor .dp-setup { grid-template-columns: 1fr; }
-  .dice-parlor .dp-rules { grid-template-columns: 1fr; }
-  .dice-parlor .dp-dice-row { gap: 6px; }
-  .dice-parlor .dp-die { width: 58px; height: 66px; }
+  .seven-dice-poker .dp-participants { grid-template-columns: 1fr; }
+  .seven-dice-poker .dp-setup { grid-template-columns: 1fr; }
+  .seven-dice-poker .dp-rules { grid-template-columns: 1fr; }
+  .seven-dice-poker .dp-dice-row { gap: 6px; }
+  .seven-dice-poker .dp-die { width: 58px; height: 66px; }
 }
+#seven-dice-poker .dp-betting-hand { width:min(450px,calc(100% - 32px));padding:18px 22px;border:1px solid #957343;background:linear-gradient(145deg,#38271bd9,#19120fef),url('../assets/tavern-table.png') center/cover;border-radius:16px;box-shadow:0 12px 28px #0006,inset 0 1px #ffe3a91c; }
+.seven-dice-poker .dp-kept-heading { display:flex;justify-content:space-between;align-items:center;gap:12px;color:#efdfbf;font-weight:700; }
+.seven-dice-poker .dp-kept-heading small { color:#bda47d;font-size:10px;letter-spacing:.08em; }
+.seven-dice-poker .dp-kept-tray { display:flex;justify-content:center;gap:12px;padding:22px 0; }
+.seven-dice-poker .dp-static-die.dp-carved-die { display:block;width:58px;height:58px;flex:0 0 58px;padding:10px;border-radius:11px;background:linear-gradient(135deg,#fff2d5,#dbc299);border:1px solid #ead7b4;box-shadow:0 5px 0 #8d704d,0 9px 10px #0008,inset 0 2px 2px #fff9,inset -2px -2px 4px #795b3533; }
+.seven-dice-poker .dp-pip-grid { display:grid;width:100%;height:100%;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:3px; }
+.seven-dice-poker .dp-pip-grid i { border-radius:50%;background:#3b2b1d;box-shadow:inset 0 1px 2px #000c,0 1px #fff8; }
+.seven-dice-poker .dp-empty-slot { width:58px;height:58px;flex:0 0 58px;border:1px dashed #b3946266;border-radius:11px;background:#0002; }
+.seven-dice-poker .dp-kept-combination { display:inline-block;padding:7px 20px;color:#f7d484;border-top:1px solid #997b453f;font:700 19px Georgia,serif; }
+.seven-dice-poker .dp-kept-empty { color:#bfa889;font-size:12px; }
+.seven-dice-poker .dp-table-reference { margin:10px 16px;padding:12px 14px;border:1px solid #685033;border-radius:10px;background:#17110edb;flex-shrink:0; }
+.seven-dice-poker .dp-table-reference>header { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;color:#ead3ab; }
+.seven-dice-poker .dp-table-reference>header small { color:#b59d7f;font-size:9px;letter-spacing:.05em; }
+.seven-dice-poker .dp-reference-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px; }
+.seven-dice-poker .dp-reference-item { display:flex;position:relative;align-items:center;gap:8px;padding:8px;border:1px solid #6b513230;border-radius:7px;background:#ffffff03; }
+.seven-dice-poker .dp-reference-order { color:#9f8257;font:16px Georgia,serif; }
+.seven-dice-poker .dp-reference-item strong { display:block;color:#ddceb5;font-size:11px; }
+.seven-dice-poker .dp-reference-example { display:block;color:#a99980;font-size:20px;white-space:nowrap;line-height:1.3; }
+.seven-dice-poker .dp-reference-item.current { border-color:#b99a55;background:#8e6a2426; }
+.seven-dice-poker .dp-reference-item.current .dp-reference-example { color:#f7d995; }
+.seven-dice-poker .dp-reference-check { position:absolute;right:5px;top:4px;color:#edc970;font-size:11px; }
+@container(max-width:650px){.seven-dice-poker .dp-reference-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.seven-dice-poker .dp-table-reference>header{align-items:flex-start;flex-direction:column}.seven-dice-poker .dp-kept-tray{gap:8px}.seven-dice-poker .dp-static-die.dp-carved-die,.seven-dice-poker .dp-empty-slot{width:46px;height:46px;flex-basis:46px}.seven-dice-poker .dp-carved-die{padding:8px}}
+.seven-dice-poker .dp-user-list label { display:flex;align-items:center;gap:10px; }
+.seven-dice-poker .dp-user-list input[type="checkbox"] { width:18px;height:18px;flex:0 0 18px;margin:0;padding:0; }
+.seven-dice-poker .dp-avatar { overflow:hidden; }
+.seven-dice-poker .dp-avatar img { width:100%;height:100%;object-fit:cover;border:0; }
+.seven-dice-poker .dp-fixed-actions { display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding:12px 16px;border-top:1px solid #9d7941;background:#21180ff5;box-shadow:0 -6px 18px #0004;z-index:2; }
+.seven-dice-poker .dp-fixed-actions .dp-actions,.seven-dice-poker .dp-fixed-actions .dp-bet-controls { margin:0;justify-content:center; }
+.seven-dice-poker .dp-fixed-actions>span { font-size:12px;color:#c5b392; }
+.seven-dice-poker .dp-stage-steps { display:flex;justify-content:center;gap:18px;flex-shrink:0;padding:12px;background:#1c150fc9;border-bottom:1px solid #85643344; }
+.seven-dice-poker .dp-stage-steps>span { display:flex;align-items:center;gap:6px;font-size:11px;color:#b3a18a; }
+.seven-dice-poker .dp-stage-steps b { display:grid;place-items:center;width:23px;height:23px;border:1px solid #81663c;border-radius:50%;font-weight:400; }
+.seven-dice-poker .dp-stage-steps .current { color:#ffe0a1; }
+.seven-dice-poker .dp-stage-steps .current b { background:#d9b067;color:#271908; }
+.seven-dice-poker .dp-winner-cards { display:flex;justify-content:center;flex-wrap:wrap;gap:16px; }
+.seven-dice-poker .dp-winner-card { padding:20px;border:1px solid #caa363;border-radius:16px;background:radial-gradient(ellipse at top,#b28b3738,transparent 80%),#24190fd9;box-shadow:0 0 26px #dcb3541c; }
+.seven-dice-poker .dp-winner-portrait { width:76px;height:76px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;overflow:hidden;border:2px solid #dabb76;background:#3a2a18;font:30px Georgia,serif;color:#f4d99e; }
+.seven-dice-poker .dp-winner-portrait img { width:100%;height:100%;object-fit:cover;border:0; }
+.seven-dice-poker .dp-result-kicker { color:#d3b780;font-size:10px;letter-spacing:.15em;margin-bottom:16px; }
+.seven-dice-poker .dp-result { flex:none;padding:24px 16px; }
+.seven-dice-poker .dp-prize strong { color:#f9da8e;font-size:26px; }
+@container(max-width:600px){.seven-dice-poker .dp-stage-steps{gap:8px;padding:10px 6px}.seven-dice-poker .dp-stage-steps>span{font-size:10px}.seven-dice-poker .dp-stage-steps b{width:19px;height:19px}.seven-dice-poker .dp-winner-card{padding:12px}}
+:is(.seven-dice-poker,.seven-dice-quick-game) .sd-npc-drop { padding:12px;border:1px dashed #a8844f;border-radius:9px;background:#100c0966;min-height:85px; }
+:is(.seven-dice-poker,.seven-dice-quick-game) .sd-npc-drop>p { margin:0 0 8px;color:#d8bd8b;font-size:12px;text-align:center; }
+:is(.seven-dice-poker,.seven-dice-quick-game) .sd-npc-drop.drag-over { border-color:#ffe0a0;background:#b68c3433; }
+:is(.seven-dice-poker,.seven-dice-quick-game) .sd-npc-entry { display:flex;align-items:center;gap:8px;padding:7px;margin:5px 0;background:#21180f;border-radius:7px; }
+:is(.seven-dice-poker,.seven-dice-quick-game) .sd-npc-entry img { width:36px;height:36px;object-fit:contain;border:0;border-radius:50%; }
+:is(.seven-dice-poker,.seven-dice-quick-game) .sd-npc-entry span { flex:1;min-width:0;overflow-wrap:anywhere;font-size:12px;color:#efdfbd; }
+:is(.seven-dice-poker,.seven-dice-quick-game) .sd-npc-entry button { width:25px;flex:0 0 25px;margin:0;padding:0;color:#e3bb83;border:1px solid #80603b;background:#2c2017; }
