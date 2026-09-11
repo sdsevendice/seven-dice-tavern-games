@@ -20,7 +20,7 @@
 .dice-parlor h2 { font-size: 19px; }
 .dice-parlor .dp-rules-button, .dice-parlor .dp-danger, .dice-parlor .dp-primary { width: auto; min-height: 36px; padding: 0 14px; border-radius: 6px; }
 .dice-parlor .dp-rules-button { color: #e8dac0; background: #2a211d; border: 1px solid #66523c; }
-.dice-parlor .dp-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 16px 24px; color: #d8ccb7; background: #191310f5; border-bottom: 1px solid #6c5232; font-size: 12px; }
+.dice-parlor .dp-rules { display: grid; flex-shrink: 0; max-height: 55%; overflow-y: auto; grid-template-columns: 1fr 1fr; gap: 28px; padding: 16px 24px; color: #d8ccb7; background: #191310f5; border-bottom: 1px solid #6c5232; font-size: 12px; }
 .dice-parlor .dp-rules p { margin: 6px 0; line-height: 1.45; }
 .dice-parlor .dp-ranking-direction { color: var(--dp-gold-light); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
 .dice-parlor .dp-hand-examples { max-height: 238px; display: grid; grid-template-columns: 1fr; gap: 4px; margin: 8px 0; overflow-y: auto; padding-right: 4px; scrollbar-color: #7b5c35 #17110f; }
@@ -65,7 +65,7 @@
 .dice-parlor .dp-private-mini { display: flex; flex-direction: column; text-align: right; }
 .dice-parlor .dp-private-mini span { color: var(--dp-gold-light); font-size: 11px; font-weight: 800; }
 .dice-parlor .dp-private-mini strong { color: #a99a85; font-size: 8px; }
-.dice-parlor .dp-board { min-height: 310px; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 18px; background: radial-gradient(ellipse at center, #63332344, transparent 60%); }
+.dice-parlor .dp-board { flex-shrink: 0; min-height: 310px; display: flex; flex: 1 0 auto; flex-direction: column; align-items: center; justify-content: center; padding: 18px; background: radial-gradient(ellipse at center, #63332344, transparent 60%); }
 .dice-parlor .dp-turn-label { color: var(--dp-gold); font-size: 9px; font-weight: 900; letter-spacing: .22em; }
 .dice-parlor .dp-board > h2 { margin: 4px 0 14px; font-size: 25px; }
 .dice-parlor .dp-hidden-hand { display: flex; align-items: center; gap: 8px; color: #9e907b; }
@@ -73,7 +73,7 @@
 .dice-parlor .dp-dice-row { display: flex; justify-content: center; gap: 13px; margin: 18px 0 12px; }
 .dice-parlor .dp-die { width: 88px; height: 88px; display: grid; place-content: center; margin: 0; color: #21130d; background: linear-gradient(145deg, #fff3d5, #cdbb98); border: 3px solid #7e6745; border-radius: 14px; box-shadow: 0 8px 14px #0008, inset 0 0 0 2px #fff8; }
 .dice-parlor .dp-die:not(:disabled):hover { transform: translateY(-4px); border-color: var(--dp-gold-light); }
-.dice-parlor .dp-die.held { color: #fff4df; background: linear-gradient(145deg, #8d2f29, #4f1718); border-color: #e2aa55; box-shadow: 0 0 20px #d5a84d55; }
+.dice-parlor .dp-die.held { color: #fff4df; background: linear-gradient(145deg, #416c50, #244431); border-color: #a4d3a3; box-shadow: 0 0 16px #74ba8555; }
 .dice-parlor .dp-die span { font-family: Georgia, serif; font-size: 36px; font-weight: 900; }
 .dice-parlor .dp-die small { color: #f0cb86; font-size: 7px; font-weight: 900; letter-spacing: .08em; }
 .dice-parlor .dp-die:disabled { opacity: 1; cursor: default; }
@@ -94,7 +94,26 @@
 .dice-parlor .dp-bet-hint { max-width: 560px; font-size: 10px; }
 .dice-parlor-chat ul { margin: 6px 0; padding-left: 18px; }
 
+.dice-parlor .dp-choice-help { text-align: center; max-width: 610px; line-height: 1.5; color: #d4c5a9; margin: 0 0 12px; }
+.dice-parlor .dp-choice-help strong { color: #fff0c4; }
+.dice-parlor .dp-dice-zones { width: min(600px, 100%); display: grid; gap: 10px; }
+.dice-parlor .dp-dice-zone { padding: 10px; border: 1px dashed #8d7958; border-radius: 12px; background: #100c0999; }
+.dice-parlor .dp-held-zone { background: #233d2b99; border: 1px solid #709b76; }
+.dice-parlor .dp-dice-zone h3 { margin: 0; font-size: 13px; color: #dfd0b1; }
+.dice-parlor .dp-held-zone h3 { color: #c7e7c5; }
+.dice-parlor .dp-dice-zone .dp-dice-row { min-height: 78px; flex-wrap: wrap; align-items: center; margin: 8px 0 0; }
+.dice-parlor .dp-dice-zone .dp-die { width: 72px; height: 78px; animation: dp-place-die .18s ease-out; transition: transform .15s, box-shadow .15s; }
+.dice-parlor .dp-die small { color: inherit; white-space: nowrap; }
+.dice-parlor .dp-free-zone .dp-die:not(:disabled):hover { transform: translateY(5px); }
+.dice-parlor .dp-held-zone .dp-die:not(:disabled):hover { transform: translateY(-5px); }
+.dice-parlor .dp-die:focus-visible { outline: 3px solid #fff1b7; outline-offset: 3px; }
+.dice-parlor .dp-zone-empty { margin: 0; text-align: center; color: #b7b19b; font-size: 12px; }
+.dice-parlor .dp-bet-controls, .dice-parlor .dp-actions, .dice-parlor .dp-table-info { flex-wrap: wrap; }
+@keyframes dp-place-die { from { opacity: .6; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .dice-parlor .dp-dice-zone .dp-die { animation: none; transition: none; } }
+
 @media (max-width: 760px) {
+  .dice-parlor .dp-participants { grid-template-columns: 1fr; }
   .dice-parlor .dp-setup { grid-template-columns: 1fr; }
   .dice-parlor .dp-rules { grid-template-columns: 1fr; }
   .dice-parlor .dp-dice-row { gap: 6px; }

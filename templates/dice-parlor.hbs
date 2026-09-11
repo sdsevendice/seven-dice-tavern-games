@@ -17,7 +17,7 @@
       <h2>Второй бросок</h2>
       <p>Перебрасываются только неотложенные кости. Новые результаты можно добавить к руке, ничего не брать («остаться») или вернуть в переброс любое число костей, отложенных после первого броска.</p>
       <h2>Торговля</h2>
-      <p>После каждого круга бросков участники по очереди оставляют текущую ставку, повышают её или пасуют. После повышения остальные должны уравнять новую ставку, повысить ещё раз либо выйти. После первых двух торгов начинается новый бросок, а после финальной — раскрываются руки.</p>
+      <p>После первого круга бросков проходит общая торговля. Начиная со второго круга, после каждого хода первым торгуется бросавший: чек (без повышения), повышение или пас. Все остальные отвечают по очереди. После повышения нужно уравнять, повысить ещё раз или спасовать. Пока торговля не закончена, следующий участник не может бросать кости. Даже готовая рука участвует в торговле; раскрытие происходит только после последних ответов.</p>
     </div>
     <div>
       <h2>Финальный бросок и пас</h2>
@@ -130,6 +130,25 @@
       {{#if canRoll}}
         <div class="dp-hidden-hand"><i class="fa-solid fa-eye-slash"></i><p>{{#if privateCombination}}Ваши отложенные кости готовы{{else}}Значения костей увидит только бросающий{{/if}}</p></div>
       {{/if}}
+      {{#if canChoose}}<p class="dp-choice-help"><strong>Нажмите на кости, которые хотите оставить.</strong><br>Они перейдут в зону «Оставляю». Повторное нажатие вернёт кость на переброс. Затем завершите ход.</p>{{/if}}
+      {{#if showDiceZones}}
+      <div class="dp-dice-zones">
+        <section class="dp-dice-zone dp-free-zone" aria-label="Кости на переброс">
+          <h3><i class="fa-solid fa-rotate"></i> На переброс · {{freeCount}}</h3>
+          <div class="dp-dice-row">
+            {{#each freeDice}}<button type="button" class="dp-die" data-action="toggleDie" data-participant-id="{{../active.id}}" data-index="{{index}}" title="Оставить кость {{value}}" aria-label="Оставить кость {{value}}" {{#unless selectable}}disabled{{/unless}}><span>{{value}}</span><small>ОСТАВИТЬ ↓</small></button>{{/each}}
+            {{#unless freeCount}}<p class="dp-zone-empty">Все пять костей оставлены. Завершите ход, чтобы закрепить руку.</p>{{/unless}}
+          </div>
+        </section>
+        <section class="dp-dice-zone dp-held-zone" aria-label="Оставленные кости">
+          <h3><i class="fa-solid fa-lock"></i> Оставляю · {{heldCount}}/5</h3>
+          <div class="dp-dice-row">
+            {{#each heldDice}}<button type="button" class="dp-die held" data-action="toggleDie" data-participant-id="{{../active.id}}" data-index="{{index}}" title="Вернуть кость {{value}} на переброс" aria-label="Вернуть кость {{value}} на переброс" {{#unless selectable}}disabled{{/unless}}><span>{{value}}</span><small>✓ ОСТАЁТСЯ</small></button>{{/each}}
+            {{#unless heldCount}}<p class="dp-zone-empty">Нажмите на нужные кости сверху — они останутся здесь.</p>{{/unless}}
+          </div>
+        </section>
+      </div>
+      {{else}}
       <div class="dp-dice-row">
         {{#each dice}}
         <button type="button" class="dp-die {{#if held}}held{{/if}}" data-action="toggleDie" data-participant-id="{{../active.id}}" data-index="{{index}}" {{#unless selectable}}disabled{{/unless}}>
@@ -137,10 +156,11 @@
         </button>
         {{/each}}
       </div>
+      {{/if}}
       {{#if privateCombination}}<div class="dp-combination">Текущая комбинация: <strong>{{privateCombination}}</strong></div>{{/if}}
       <div class="dp-actions">
-        {{#if canRoll}}<button type="button" class="dp-primary" data-action="roll" data-participant-id="{{active.id}}"><i class="fa-solid fa-dice"></i> Бросить кости</button>{{/if}}
-        {{#if canChoose}}<button type="button" class="dp-primary" data-action="endTurn" data-participant-id="{{active.id}}"><i class="fa-solid fa-check"></i> Остаться / завершить выбор</button>{{/if}}
+        {{#if canRoll}}<button type="button" class="dp-primary" data-action="roll" data-participant-id="{{active.id}}"><i class="fa-solid fa-dice"></i> Бросить {{freeCount}} костей</button>{{/if}}
+        {{#if canChoose}}<button type="button" class="dp-primary" data-action="endTurn" data-participant-id="{{active.id}}"><i class="fa-solid fa-check"></i> Завершить ход</button>{{/if}}
         {{#if canFold}}<button type="button" class="dp-danger" data-action="fold" data-participant-id="{{active.id}}"><i class="fa-solid fa-flag"></i> Пас</button>{{/if}}
       </div>
       {{#unless canRoll}}{{#unless canChoose}}<p class="dp-observer"><i class="fa-solid fa-lock"></i> Ожидание действия участника…</p>{{/unless}}{{/unless}}

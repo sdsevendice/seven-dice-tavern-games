@@ -117,7 +117,7 @@ function broadcastState() {
 function participantForAction(senderId, participantId) {
   const participant = hostTable?.participants.find((entry) => entry.id === participantId);
   if (!participant) throw new Error("Участник не найден.");
-  if (hostTable.phase !== "playing") throw new Error("Партия уже завершена.");
+  if (hostTable.phase !== "playing") throw new Error(hostTable.phase === "betting" ? "Сначала завершите торговлю — бросок пока недоступен." : "Партия уже завершена.");
   if (hostTable.activeParticipantId !== participant.id) throw new Error("Сейчас ход другого участника.");
   if (participant.controllerUserId !== senderId) throw new Error("Этим участником управляет другой пользователь.");
   return participant;
@@ -220,7 +220,7 @@ async function postResultToChat() {
   });
 }
 
-function enterBetting(round) {
+function enterBetting(round, starterId = null, resumeId = null) {
   const live = hostTable.participants.filter((participant) => !participant.folded);
   if (live.length <= 1) {
     if (live.length === 1 && hostTable.participants.filter((participant) => !participant.folded).length === 1) finishTable("fold");
@@ -229,9 +229,10 @@ function enterBetting(round) {
   hostTable.phase = "betting";
   hostTable.activeParticipantId = null;
   hostTable.bettingAfterRound = round;
+  hostTable.bettingResumeId = resumeId;
   hostTable.bettingResponses = [];
   hostTable.targetStake = hostTable.stakeAmount;
-  hostTable.bettingActiveParticipantId = live[0].id;
+  hostTable.bettingActiveParticipantId = starterId ?? live[0].id;
   return true;
 }
 
@@ -241,15 +242,17 @@ function startNextRound() {
     finishTable("fold");
     return;
   }
-  if (hostTable.bettingAfterRound >= 3) {
-    finishTable();
-    return;
-  }
+  const resumeId = hostTable.bettingResumeId;
   hostTable.phase = "playing";
-  hostTable.round = hostTable.bettingAfterRound + 1;
+  if (!resumeId) hostTable.round = hostTable.bettingAfterRound + 1;
+  hostTable.bettingResumeId = null;
   hostTable.bettingAfterRound = null;
   hostTable.bettingActiveParticipantId = null;
   hostTable.bettingResponses = [];
+  if (resumeId) {
+    advanceTurn(resumeId, true);
+    return;
+  }
   hostTable.activeParticipantId = hostTable.participants.find((participant) => !participant.folded && !participant.completed)?.id ?? null;
   if (!hostTable.activeParticipantId) finishTable();
 }
@@ -274,7 +277,7 @@ function advanceBetting(currentId) {
   }
 }
 
-function advanceTurn(currentId) {
+function advanceTurn(currentId, afterBetting = false) {
   const live = hostTable.participants.filter((participant) => !participant.folded);
   if (live.length <= 1) {
     const survivor = live[0];
@@ -282,19 +285,30 @@ function advanceTurn(currentId) {
     finishTable("fold");
     return;
   }
-  const completedRound = hostTable.round <= 3 && live.every((participant) => participant.completed || participant.rollCount >= hostTable.round);
-  if (completedRound && enterBetting(hostTable.round)) return;
+  // From the second round, settle bets after each hand, before the next roll.
+  const current = hostTable.participants.find((participant) => participant.id === currentId);
+  if (hostTable.round >= 2 && !afterBetting && !current.folded) {
+    enterBetting(hostTable.round, currentId, currentId);
+    return;
+  }
+  const completedRound = live.every((participant) => participant.completed || participant.rollCount >= hostTable.round);
+  if (completedRound && hostTable.round === 1 && enterBetting(1)) return;
   if (live.every((participant) => participant.completed)) {
     finishTable();
+    return;
+  }
+
+  if (completedRound) {
+    hostTable.round += 1;
+    hostTable.activeParticipantId = live.find((participant) => !participant.completed)?.id ?? null;
     return;
   }
 
   const start = hostTable.participants.findIndex((participant) => participant.id === currentId);
   for (let offset = 1; offset <= hostTable.participants.length; offset += 1) {
     const candidate = hostTable.participants[(start + offset) % hostTable.participants.length];
-    if (!candidate.folded && !candidate.completed) {
+    if (!candidate.folded && !candidate.completed && candidate.rollCount < hostTable.round) {
       hostTable.activeParticipantId = candidate.id;
-      hostTable.round = Math.min(3, candidate.rollCount + 1);
       return;
     }
   }
@@ -368,7 +382,7 @@ async function handleHostRequest(packet) {
       const participant = participantForBetAction(packet.senderId, packet.participantId);
       if (packet.action === "raiseStake") {
         const raise = parseMoney(packet.data.amount);
-        if (!raise || raise.amount <= 0) throw new Error("Укажите положительную сумму повышения.");
+        if (!raise || raise.amount <= 0 || !Number.isFinite(hostTable.targetStake + raise.amount)) throw new Error("Укажите положительную конечную сумму повышения.");
         hostTable.targetStake += raise.amount;
         hostTable.stakeAmount = hostTable.targetStake;
         const contribution = Math.max(0, hostTable.targetStake - participant.committed);
@@ -542,6 +556,8 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
       held: Boolean(myPrivate?.held?.[index]),
       selectable: Boolean(controlsActive && myPrivate?.awaitingChoice)
     }));
+    const heldDice = dice.filter((die) => die.held);
+    const freeDice = dice.filter((die) => !die.held);
     return {
       hasTable: Boolean(table),
       waitingForGm: !table && !game.user.isGM,
@@ -553,11 +569,11 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
         ...table,
         isFinished: table.phase === "finished",
         isBetting: table.phase === "betting",
-        bettingRoundLabel: table.bettingAfterRound === 1 ? "после первого броска" : table.bettingAfterRound === 2 ? "после второго броска" : "после финального броска",
+        bettingRoundLabel: table.bettingAfterRound === 1 ? "после первого круга" : "перед следующим броском или раскрытием",
         roundLabel: table.round === 1 ? "Первый бросок" : table.round === 2 ? "Второй бросок" : "Финальный бросок",
         participants: table.participants.map((participant) => ({
           ...participant,
-          isActive: participant.id === table.activeParticipantId,
+          isActive: participant.id === (table.phase === "betting" ? table.bettingActiveParticipantId : table.activeParticipantId),
           isWinner: table.winnerIds.includes(participant.id),
           status: participant.folded
             ? `Пас · в банке: ${participant.foldLoss}`
@@ -576,11 +592,16 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
       active,
       bettingActive,
       dice,
+      heldDice,
+      freeDice,
+      heldCount: heldDice.length,
+      freeCount: freeDice.length,
+      showDiceZones: Boolean(controlsActive && myPrivate?.dice?.every(Number.isInteger)),
       canRoll: Boolean(controlsActive && !myPrivate?.awaitingChoice),
       canChoose: Boolean(controlsActive && myPrivate?.awaitingChoice),
       canFold: Boolean(controlsActive && (active?.rollCount ?? 0) < 3),
       canBet: controlsBetting,
-      callLabel: amountToCall > 0 ? `Уравнять +${formatMoney(amountToCall, table?.currency)}` : "Оставить текущую ставку",
+      callLabel: amountToCall > 0 ? `Уравнять +${formatMoney(amountToCall, table?.currency)}` : "Чек — без повышения",
       privateCombination: myPrivate?.dice?.every(Number.isInteger) ? analyzeHand(myPrivate.dice).name : ""
     };
   }
