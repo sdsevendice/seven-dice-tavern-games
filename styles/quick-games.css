@@ -58,3 +58,11 @@
 #seven-dice-quick-game .sdq-hit-result>strong { display:block;flex:none;height:auto;min-height:0;line-height:1.25;margin:0;padding:0;font-size:42px; }
 #seven-dice-quick-game .sdq-hit-result>b { display:block;flex:none;line-height:1.4;margin:0;padding:0;font-size:15px; }
 #seven-dice-quick-game .sdq-hit-result>span,#seven-dice-quick-game .sdq-hit-result>small { line-height:1.4; }
+.seven-dice-quick-game .sdq-header{position:relative}.seven-dice-quick-game .sdq-rules-menu{position:relative;z-index:30}.seven-dice-quick-game .sdq-rules-menu summary{min-width:100px;padding:9px 12px;color:#f0d49a;background:#261a12;border:1px solid #74532f;border-radius:7px;cursor:pointer;font-weight:800;list-style:none}.seven-dice-quick-game .sdq-rules-menu summary::-webkit-details-marker{display:none}.seven-dice-quick-game .sdq-rules-menu[open] summary{color:#211407;background:#e1b653}.seven-dice-quick-game .sdq-rules-menu>div{position:absolute;right:0;top:46px;width:min(440px,75vw);max-height:500px;padding:17px;overflow:auto;color:#ded0b8;background:#17100df7;border:1px solid #a67c3e;border-radius:10px;box-shadow:0 18px 40px #000c}.seven-dice-quick-game .sdq-rules-menu h2{margin-top:0}.seven-dice-quick-game .sdq-rules-menu p,.seven-dice-quick-game .sdq-rules-menu li{line-height:1.4}
+@container(max-width:570px){
+ .seven-dice-quick-game .sdq-header{padding:8px;gap:7px}
+ .seven-dice-quick-game .sdq-header h1{font-size:19px}
+ .seven-dice-quick-game .sdq-game-art,.seven-dice-quick-game .sdq-header>i{display:none}
+ .seven-dice-quick-game .sdq-rules-menu{position:static}
+ .seven-dice-quick-game .sdq-rules-menu>div{top:100%;right:8px;width:min(440px,calc(100% - 16px))}
+}

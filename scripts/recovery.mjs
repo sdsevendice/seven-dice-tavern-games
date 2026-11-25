@@ -13,6 +13,6 @@ export function loadRecovery(kind) {
   if (!game.user.isGM || !globalThis.sessionStorage || !game.world?.id) return null;
   try {
     const state = JSON.parse(sessionStorage.getItem(key(kind)) ?? "null");
-    return state?.id && Array.isArray(state.participants) && ["playing", "betting", "finished"].includes(state.phase) ? state : null;
+    return state?.id && Array.isArray(state.participants) && ["playing", "betting", "dealer", "finished"].includes(state.phase) ? state : null;
   } catch { return null; }
 }

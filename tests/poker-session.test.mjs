@@ -152,7 +152,7 @@ console.log('Poker session: selection, turn betting, raises, folds, privacy, 2â€
   await s.send('roll',a.id);assert.equal(s.rolls.at(-1),'2d6');
   await s.send('toggle',a.id,{index:2});assert.equal(a.held[2],true,'final results locked');
   await s.send('endTurn',a.id);await s.choice(b.id);await s.settle();assert.equal(s.api.table.phase,'finished');
-  const hub=await new s.api.TavernGamesHubApp()._prepareContext();assert.equal(hub.readyCount,3);assert.equal(hub.totalCount,8);
+  const hub=await new s.api.TavernGamesHubApp()._prepareContext();assert.equal(hub.readyCount,6);assert.equal(hub.totalCount,8);
 }
 for (const count of [2,3,6]) {
   const s=session();await s.create(count,true);

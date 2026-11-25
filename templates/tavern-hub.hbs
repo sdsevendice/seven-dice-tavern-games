@@ -13,7 +13,7 @@
     <button type="button" class="sdth-game-card {{#if available}}available{{else}}in-development{{/if}}" data-action="selectGame" data-game-id="{{id}}" {{#unless available}}disabled aria-label="{{title}} — в разработке" title="В разработке"{{/unless}}>
       <span class="sdth-number">{{number}}</span>
       <div class="sdth-card-icon">{{#if art}}<img src="{{art}}" alt="">{{else}}<i class="fa-solid {{icon}}" aria-hidden="true"></i>{{/if}}</div>
-      <div class="sdth-card-copy"><h2>{{title}}</h2>{{#if available}}<span>{{players}} игроков · {{dice}}</span><p class="sdth-brief">{{brief}}</p>{{/if}}</div>
+      <div class="sdth-card-copy"><h2>{{title}}</h2>{{#if available}}<span>{{players}} игроков · {{dice}}</span><p class="sdth-brief">{{brief}}</p>{{else}}<span>В разработке</span>{{/if}}</div>
       {{#if available}}<span class="sdth-card-action" aria-hidden="true">↗</span>{{else}}<span class="sdth-construction" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 20L17 7M14 4l6 6M12 6l6 6M3 19l2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>{{/if}}
     </button>
     {{/each}}

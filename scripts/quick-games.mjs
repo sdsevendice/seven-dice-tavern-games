@@ -367,7 +367,7 @@ export class QuickGamesApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   };
 
-  static PARTS = { main: { template: `${MODULE_PATH}/templates/quick-game.hbs` } };
+  static PARTS = { main: { template: `${MODULE_PATH}/templates/quick-game.hbs`, scrollable: [".sdq-game", ".sdq-setup"] } };
 
   static open(gameId) {
     this.instance ??= new this();

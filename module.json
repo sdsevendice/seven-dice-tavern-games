@@ -1,11 +1,11 @@
 {
   "id": "seven-dice-tavern-games",
   "title": "Игры в таверне от Seven Dice",
-  "description": "Коллекция сетевых азартных игр для игроков и NPC: покер на костях и игры Seven Dice.",
-  "version": "0.5.0",
+  "description": "Шесть тавернных игр на костях для игроков и NPC в Foundry VTT.",
+  "version": "0.6.0",
   "url": "https://github.com/sdsevendice/seven-dice-tavern-games",
   "manifest": "https://github.com/sdsevendice/seven-dice-tavern-games/releases/latest/download/module.json",
-  "download": "https://github.com/sdsevendice/seven-dice-tavern-games/releases/download/v0.5.0/module.zip",
+  "download": "https://github.com/sdsevendice/seven-dice-tavern-games/releases/download/v0.6.0/module.zip",
   "compatibility": {
     "minimum": "14",
     "verified": "14.364",
@@ -22,7 +22,8 @@
   "styles": [
     "styles/dice-parlor.css",
     "styles/tavern-hub.css",
-    "styles/quick-games.css"
+    "styles/quick-games.css",
+    "styles/extended-games.css"
   ],
   "languages": [
     {

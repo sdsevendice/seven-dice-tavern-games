@@ -3,6 +3,7 @@
     <button type="button" class="sdq-secondary" data-action="sync" title="Получить актуальное состояние">Обновить</button>
     <img class="sdq-logo" src="modules/seven-dice-tavern-games/assets/seven-dice-logo.png" alt="Seven Dice">
     <div><span>ИГРЫ В ТАВЕРНЕ ОТ SEVEN DICE</span><h1>{{title}}</h1><p>{{subtitle}}</p></div>
+    <details class="sdq-rules-menu"><summary><i class="fa-solid fa-book-open"></i> Правила</summary><div>{{#if isDarts}}<h2>Гоблинский дротик</h2><p>d20 определяет сектор от 1 до 20, а d6 — область попадания:</p><ul><li>1–2: внешняя область, сектор ×1;</li><li>3–4: внутреннее кольцо, сектор ×2;</li><li>5: тройное кольцо, сектор ×3;</li><li>6: яблочко, 50 очков.</li></ul><p>Участники бросают по очереди. Первый достигший установленной цели забирает банк.</p>{{else}}<h2>Кости Балдура</h2><p>Все начинают с двух d6. После броска можно добавить ещё одну кость или остановиться.</p><ul><li>Сумма выше 21 означает проигрыш.</li><li>Побеждает наибольшая сумма, не превышающая 21.</li><li>При равенстве победителей банк делится.</li></ul>{{/if}}</div></details>
     {{#if isDarts}}<i class="fa-solid fa-bullseye"></i>{{else}}<img class="sdq-game-art" src="modules/seven-dice-tavern-games/assets/baldur-dice.png" alt="Кости Балдура">{{/if}}
   </header>
 

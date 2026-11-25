@@ -1,6 +1,7 @@
 import { analyzeHand, determineWinners, HAND_NAMES } from "./engine.mjs";
 import { TAVERN_GAMES } from "./catalog.mjs";
 import { QuickGamesApp } from "./quick-games.mjs";
+import { ExtendedGamesApp } from "./extended-games.mjs";
 import { saveRecovery, loadRecovery } from "./recovery.mjs";
 import { bindNpcDrop, resolveNpcActors } from "./npc-drop.mjs";
 
@@ -638,7 +639,7 @@ class DiceParlorApp extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   static PARTS = {
-    main: { template: `${MODULE_PATH}/templates/dice-parlor.hbs` }
+    main: { template: `${MODULE_PATH}/templates/dice-parlor.hbs`, scrollable: [".dp-game", ".dp-setup", ".dp-rules", ".dp-hand-examples"] }
   };
 
   rulesOpen = false;
@@ -860,7 +861,7 @@ class TavernGamesHubApp extends HandlebarsApplicationMixin(ApplicationV2) {
       progressSlots: TAVERN_GAMES.map((entry,index)=>({ready:index<readyCount})),
       games: [...TAVERN_GAMES].sort((a, b) => Number(b.available) - Number(a.available)).map((gameEntry, index) => ({
         ...gameEntry,
-        brief: {"poker-dice":"Соберите комбинацию из 5 костей за 3 круга. Оставляйте нужные, остальные перебрасывайте. Между кругами — ставки; сильнейшая рука забирает банк.","goblin-darts":"Бросайте d20 и d6: сектор и множитель определяют очки. Яблочко — 50. Кто первым наберёт цель, забирает банк.","baldur-dice":"Начните с 2d6. Добавляйте по кости или остановитесь: нужна сумма ближе к 21. Перебор проигрывает; при ничьей банк делится."}[gameEntry.id] ?? "",
+        brief: {"poker-dice":"Соберите комбинацию из 5 костей за 3 круга. Оставляйте нужные, остальные перебрасывайте. Между кругами — ставки; сильнейшая рука забирает банк.","goblin-darts":"Бросайте d20 и d6: сектор и множитель определяют очки. Яблочко — 50. Кто первым наберёт цель, забирает банк.","baldur-dice":"Начните с 2d6. Добавляйте по кости или остановитесь: нужна сумма ближе к 21. Перебор проигрывает; при ничьей банк делится.","crown-anchor":"Поставьте разное число монет на 1–6 символов. Ведущий бросает 3d6, а стол показывает совпадения и чистый выигрыш.","deadly-shot":"Тайно бросьте 3d6 и один раз перебросьте до двух костей. Тройка сильнее пары, пара сильнее разных костей.","help-neighbor":"Наберите 15 очков первым, но берегитесь единицы: она передаёт весь ваш счёт соседу слева.","madness-mark":"Занимайте числа на шкале d20 и собирайте непрерывную цепочку. Чужие отметки можно сбивать.","hammer-ring":"Задайте цель и собирайте физические жетоны молота. Первый достигший нужного количества забирает банк."}[gameEntry.id] ?? "",
         number: String(index + 1).padStart(2,"0")
       }))
     };
@@ -870,7 +871,8 @@ class TavernGamesHubApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const entry = TAVERN_GAMES.find(item => item.id === target.dataset.gameId);
     if (!entry?.available) return;
     if (entry.id === "poker-dice") DiceParlorApp.open();
-    else QuickGamesApp.open(entry.id);
+    else if (["goblin-darts", "baldur-dice"].includes(entry.id)) QuickGamesApp.open(entry.id);
+    else ExtendedGamesApp.open(entry.id);
   }
 
   static onBack() {
@@ -881,7 +883,8 @@ class TavernGamesHubApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static onPlayGame(event, target) {
     const gameId = target.dataset.gameId;
     if (gameId === "poker-dice") DiceParlorApp.open();
-    else QuickGamesApp.open(gameId);
+    else if (["goblin-darts", "baldur-dice"].includes(gameId)) QuickGamesApp.open(gameId);
+    else ExtendedGamesApp.open(gameId);
   }
 }
 
@@ -892,7 +895,7 @@ Hooks.once("ready", () => {
   module.api = {
     open: () => TavernGamesHubApp.open(),
     openPoker: () => DiceParlorApp.open(),
-    openGame: (gameId) => gameId === "poker-dice" ? DiceParlorApp.open() : QuickGamesApp.open(gameId),
+    openGame: (gameId) => gameId === "poker-dice" ? DiceParlorApp.open() : ["goblin-darts", "baldur-dice"].includes(gameId) ? QuickGamesApp.open(gameId) : ExtendedGamesApp.open(gameId),
     analyzeHand,
     handNames: HAND_NAMES,
     games: TAVERN_GAMES
